@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Calendar, CheckSquare, Users, DollarSign, FileText, Activity } from '@lucide/vue'
 
@@ -14,6 +14,7 @@ const tabs = [
   { id: 'gantt', name: '甘特图', icon: Calendar },
   { id: 'tasks', name: '任务', icon: CheckSquare },
   { id: 'suppliers', name: '供应商', icon: Users },
+  { id: 'quotes', name: '报价', icon: DollarSign },
   { id: 'files', name: '文件', icon: FileText },
 ]
 
@@ -96,6 +97,34 @@ const newTask = ref({ name: '', assignee: '', deadline: '', priority: 'medium' }
 const showNewSupplierModal = ref(false)
 const newSupplier = ref({ 
   name: '', contact: '', contractAmount: 0, prepayment: 0, finalPayment: 0, settlement: 0 
+})
+
+// 报价数据
+const quotes = ref([
+  { id: 1, name: '舞台搭建', category: '搭建', costPrice: 80000, quotePrice: 120000, quantity: 1, remark: '含基础灯光' },
+  { id: 2, name: 'LED屏幕租赁', category: '搭建', costPrice: 30000, quotePrice: 45000, quantity: 1, remark: 'P3高清屏' },
+  { id: 3, name: '宣传物料制作', category: '物料', costPrice: 15000, quotePrice: 25000, quantity: 1, remark: '海报、易拉宝等' },
+  { id: 4, name: '主持人费用', category: '人员', costPrice: 5000, quotePrice: 8000, quantity: 1, remark: '专业主持人' },
+  { id: 5, name: '摄影摄像', category: '人员', costPrice: 6000, quotePrice: 10000, quantity: 2, remark: '双机位' },
+])
+
+// 报价版本
+const quoteVersions = ref([
+  { id: 1, name: 'V3 - 最终报价', status: '已确认', date: '2024-03-15', amount: 458000 },
+  { id: 2, name: 'V2 - 调整版', status: '草稿', date: '2024-03-10', amount: 485000 },
+  { id: 3, name: 'V1 - 初版', status: '草稿', date: '2024-03-05', amount: 520000 },
+])
+
+// 报价计算
+const totalQuoteCost = computed(() => quotes.value.reduce((sum, q) => sum + q.costPrice * q.quantity, 0))
+const totalQuoteAmount = computed(() => quotes.value.reduce((sum, q) => sum + q.quotePrice * q.quantity, 0))
+const estimatedProfit = computed(() => totalQuoteAmount.value - totalQuoteCost.value)
+const profitMargin = computed(() => totalQuoteAmount.value > 0 ? Math.round((estimatedProfit.value / totalQuoteAmount.value) * 100) : 0)
+
+// 新建报价弹窗
+const showNewQuoteModal = ref(false)
+const newQuote = ref({
+  name: '', category: '搭建', costPrice: 0, quotePrice: 0, quantity: 1, remark: ''
 })
 </script>
 
@@ -358,6 +387,104 @@ const newSupplier = ref({
       </div>
     </div>
 
+    <!-- 报价 Tab -->
+    <div v-else-if="activeTab === 'quotes'" class="space-y-6">
+      <!-- 报价汇总 -->
+      <div class="grid grid-cols-4 gap-6">
+        <div class="card">
+          <p class="text-caption mb-1">项目预算</p>
+          <p class="text-display text-2xl font-mono">¥{{ project.budget.toLocaleString() }}</p>
+        </div>
+        <div class="card">
+          <p class="text-caption mb-1">已报成本</p>
+          <p class="text-display text-2xl font-mono">¥{{ totalQuoteCost.toLocaleString() }}</p>
+        </div>
+        <div class="card">
+          <p class="text-caption mb-1">报价金额</p>
+          <p class="text-display text-2xl font-mono">¥{{ totalQuoteAmount.toLocaleString() }}</p>
+        </div>
+        <div class="card">
+          <p class="text-caption mb-1">预计利润</p>
+          <p class="text-display text-2xl font-mono" :class="estimatedProfit >= 0 ? 'text-apple-green' : 'text-apple-red'">
+            ¥{{ estimatedProfit.toLocaleString() }}
+          </p>
+          <p class="text-caption">{{ profitMargin }}%</p>
+        </div>
+      </div>
+
+      <!-- 报价明细表 -->
+      <div class="card overflow-hidden">
+        <div class="flex items-center justify-between p-4 border-b border-apple-gray-100">
+          <h4 class="text-title-2">报价明细</h4>
+          <button @click="showNewQuoteModal = true" class="btn-primary">+ 添加报价项</button>
+        </div>
+        <table class="w-full">
+          <thead class="bg-apple-bg">
+            <tr>
+              <th class="text-left p-4 text-caption font-medium">报价项</th>
+              <th class="text-left p-4 text-caption font-medium">类别</th>
+              <th class="text-right p-4 text-caption font-medium">成本价</th>
+              <th class="text-right p-4 text-caption font-medium">报价</th>
+              <th class="text-right p-4 text-caption font-medium">数量</th>
+              <th class="text-right p-4 text-caption font-medium">小计</th>
+              <th class="text-left p-4 text-caption font-medium">备注</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="quote in quotes" :key="quote.id" class="border-t border-apple-gray-100 hover:bg-apple-bg/50 transition-colors">
+              <td class="p-4">
+                <p class="text-body font-medium">{{ quote.name }}</p>
+              </td>
+              <td class="p-4">
+                <span class="tag" :class="{
+                  'tag-blue': quote.category === '搭建',
+                  'tag-orange': quote.category === '物料',
+                  'tag-green': quote.category === '人员',
+                  'tag-gray': quote.category === '其他'
+                }">{{ quote.category }}</span>
+              </td>
+              <td class="p-4 text-right font-mono text-body">¥{{ quote.costPrice.toLocaleString() }}</td>
+              <td class="p-4 text-right font-mono text-body">¥{{ quote.quotePrice.toLocaleString() }}</td>
+              <td class="p-4 text-right text-body">{{ quote.quantity }}</td>
+              <td class="p-4 text-right font-mono text-body font-medium">¥{{ (quote.quotePrice * quote.quantity).toLocaleString() }}</td>
+              <td class="p-4 text-caption">{{ quote.remark || '-' }}</td>
+            </tr>
+          </tbody>
+          <tfoot class="bg-apple-bg font-medium">
+            <tr>
+              <td colspan="2" class="p-4 text-right text-body">合计</td>
+              <td class="p-4 text-right font-mono">¥{{ totalQuoteCost.toLocaleString() }}</td>
+              <td class="p-4 text-right font-mono">¥{{ totalQuoteAmount.toLocaleString() }}</td>
+              <td colspan="3"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- 报价版本历史 -->
+      <div class="card">
+        <h4 class="text-title-2 mb-4">报价版本</h4>
+        <div class="space-y-3">
+          <div v-for="version in quoteVersions" :key="version.id" 
+               class="flex items-center justify-between p-3 bg-apple-bg rounded-apple-sm">
+            <div class="flex items-center gap-4">
+              <span class="text-body font-medium">{{ version.name }}</span>
+              <span class="tag" :class="{
+                'tag-green': version.status === '已确认',
+                'tag-blue': version.status === '待确认',
+                'tag-gray': version.status === '草稿'
+              }">{{ version.status }}</span>
+            </div>
+            <div class="flex items-center gap-4">
+              <span class="text-caption">{{ version.date }}</span>
+              <span class="text-body font-mono">¥{{ version.amount.toLocaleString() }}</span>
+              <button class="text-apple-blue hover:text-apple-blue-hover text-body">查看</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 其他 Tab 占位 -->
     <div v-else class="card p-12 text-center">
       <p class="text-apple-gray-400 text-body">{{ tabs.find(t => t.id === activeTab)?.name }}功能开发中...</p>
@@ -423,6 +550,50 @@ const newSupplier = ref({
         <div class="flex items-center justify-end gap-3 mt-8">
           <button @click="showNewSupplierModal = false" class="px-6 py-2 text-body hover:bg-apple-bg rounded-apple-sm transition-colors">取消</button>
           <button @click="showNewSupplierModal = false" class="btn-primary">添加</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 新建报价弹窗 -->
+    <div v-if="showNewQuoteModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" @click.self="showNewQuoteModal = false">
+      <div class="bg-white rounded-apple p-8 w-[480px] max-w-[90vw]">
+        <h4 class="text-title-1 mb-6">添加报价项</h4>
+        <div class="space-y-4">
+          <div>
+            <label class="text-caption block mb-2">报价项名称</label>
+            <input v-model="newQuote.name" type="text" class="w-full px-4 py-2 border border-apple-gray-100 rounded-apple-sm focus:outline-none focus:border-apple-blue" placeholder="如：舞台搭建">
+          </div>
+          <div>
+            <label class="text-caption block mb-2">类别</label>
+            <select v-model="newQuote.category" class="w-full px-4 py-2 border border-apple-gray-100 rounded-apple-sm focus:outline-none focus:border-apple-blue">
+              <option value="搭建">搭建</option>
+              <option value="物料">物料</option>
+              <option value="人员">人员</option>
+              <option value="其他">其他</option>
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="text-caption block mb-2">成本价</label>
+              <input v-model="newQuote.costPrice" type="number" class="w-full px-4 py-2 border border-apple-gray-100 rounded-apple-sm focus:outline-none focus:border-apple-blue" placeholder="0">
+            </div>
+            <div>
+              <label class="text-caption block mb-2">报价</label>
+              <input v-model="newQuote.quotePrice" type="number" class="w-full px-4 py-2 border border-apple-gray-100 rounded-apple-sm focus:outline-none focus:border-apple-blue" placeholder="0">
+            </div>
+          </div>
+          <div>
+            <label class="text-caption block mb-2">数量</label>
+            <input v-model="newQuote.quantity" type="number" class="w-full px-4 py-2 border border-apple-gray-100 rounded-apple-sm focus:outline-none focus:border-apple-blue" placeholder="1">
+          </div>
+          <div>
+            <label class="text-caption block mb-2">备注</label>
+            <input v-model="newQuote.remark" type="text" class="w-full px-4 py-2 border border-apple-gray-100 rounded-apple-sm focus:outline-none focus:border-apple-blue" placeholder="可选">
+          </div>
+        </div>
+        <div class="flex items-center justify-end gap-3 mt-8">
+          <button @click="showNewQuoteModal = false" class="px-6 py-2 text-body hover:bg-apple-bg rounded-apple-sm transition-colors">取消</button>
+          <button @click="showNewQuoteModal = false" class="btn-primary">添加</button>
         </div>
       </div>
     </div>
