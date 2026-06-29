@@ -3,6 +3,8 @@ import DashboardView from '../views/DashboardView.vue'
 import ProjectsView from '../views/ProjectsView.vue'
 import ClientsView from '../views/ClientsView.vue'
 import ReportsView from '../views/ReportsView.vue'
+import CreativeView from '../views/CreativeView.vue'
+import ProjectDetailView from '../views/ProjectDetailView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -20,10 +22,22 @@ const router = createRouter({
       meta: { title: '项目管理' },
     },
     {
+      path: '/projects/:id',
+      name: 'project-detail',
+      component: ProjectDetailView,
+      meta: { title: '项目详情' },
+    },
+    {
       path: '/clients',
       name: 'clients',
       component: ClientsView,
       meta: { title: '客户管理' },
+    },
+    {
+      path: '/creative',
+      name: 'creative',
+      component: CreativeView,
+      meta: { title: '创意部工作' },
     },
     {
       path: '/reports',

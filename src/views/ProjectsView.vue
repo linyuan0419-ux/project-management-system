@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const viewMode = ref<'list' | 'board'>('board')
 
@@ -72,6 +75,7 @@ const getProjectsByStage = (stageId: string) => {
             v-for="project in getProjectsByStage(stage.id)"
             :key="project.id"
             class="card cursor-pointer hover:shadow-apple-hover"
+            @click="router.push(`/projects/${project.id}`)"
           >
             <div class="flex items-start justify-between mb-3">
               <span v-if="project.type === 'pitch'" class="tag tag-orange">打标</span>
@@ -125,7 +129,7 @@ const getProjectsByStage = (stageId: string) => {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="project in projects" :key="project.id" class="border-t border-apple-gray-100 hover:bg-apple-bg/50 cursor-pointer transition-colors">
+          <tr v-for="project in projects" :key="project.id" class="border-t border-apple-gray-100 hover:bg-apple-bg/50 cursor-pointer transition-colors" @click="router.push(`/projects/${project.id}`)">
             <td class="p-4">
               <p class="text-body font-medium">{{ project.name }}</p>
             </td>

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { CheckSquare, AlertCircle, Briefcase, Clock } from '@lucide/vue'
+
+const router = useRouter()
 
 // 概览数据
 const stats = [
@@ -69,7 +72,7 @@ const recentActivities = [
     <section>
       <h3 class="text-title-1 mb-6">进行中项目</h3>
       <div class="grid grid-cols-3 gap-6">
-        <div v-for="project in activeProjects" :key="project.id" class="card cursor-pointer">
+        <div v-for="project in activeProjects" :key="project.id" class="card cursor-pointer" @click="router.push(`/projects/${project.id}`)">
           <div class="flex items-center gap-3 mb-4">
             <div class="w-1 h-8 rounded-full" :style="{ backgroundColor: project.color }"></div>
             <div>
