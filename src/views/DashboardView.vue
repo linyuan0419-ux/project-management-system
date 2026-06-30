@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { CheckSquare, AlertCircle, Briefcase, Clock, Sparkles, Sun, Moon, Coffee, Heart, Droplets, Fish, Cat, Smile } from '@lucide/vue'
+import { loadData, autoSave } from '../stores/dbSync'
 
 const router = useRouter()
 
@@ -13,6 +14,35 @@ const catState = ref({
   mood: 80,        // 心情值 0-100
   energy: 80,      // 精力值 0-100
 })
+
+// 自动保存小猫状态
+watch(catState, (newVal) => {
+  autoSave('catState', newVal, 'current')
+}, { deep: true })
+
+// 小猫表情和状态
+const catStatus = computed(() => {
+  const { hunger, thirst, mood, energy } = catState.value
+  const avg = (hunger + thirst + mood + energy) / 4
+  
+  if (avg >= 80) return { emoji: '😸', text: '开心', color: '#34C759', desc: '喵~ 今天工作很顺利呢！' }
+  if (avg >= 60) return { emoji: '😺', text: '满足', color: '#007AFF', desc: '喵喵~ 状态不错哦' }
+  if (avg >= 40) return { emoji: '😐', text: '一般', color: '#FF9500', desc: '喵... 有点饿了' }
+  if (avg >= 20) return { emoji: '😿', text: '疲惫', color: '#FF3B30', desc: '喵喵... 需要休息' }
+  return { emoji: '😾', text: '不开心', color: '#8E8E93', desc: '喵呜... 快给我吃的！' }
+})
+
+// 食物库存
+const inventory = ref({
+  food: 3,     // 猫粮
+  water: 3,    // 水
+  snack: 1,    // 零食
+})
+
+// 自动保存库存
+watch(inventory, (newVal) => {
+  autoSave('inventory', newVal, 'current')
+}, { deep: true })
 
 // 小猫表情和状态
 const catStatus = computed(() => {
@@ -69,7 +99,38 @@ const earnReward = (taskCompleted: boolean) => {
 
 // 自然衰减（每30秒）
 let decayInterval: number | null = null
-onMounted(() => {
+onMounted(async () => {
+  // ========== 数据持久化：加载保存的数据 ==========
+  // 加载小猫状态
+  const savedCatState = await loadData('catState', 'current')
+  if (savedCatState && savedCatState.hunger !== undefined) {
+    catState.value = savedCatState
+  }
+  
+  // 加载库存
+  const savedInventory = await loadData('inventory', 'current')
+  if (savedInventory) {
+    inventory.value = { ...inventory.value, ...savedInventory }
+  }
+  
+  // 加载今日完成数
+  const savedStats = await loadData('todayStats', 'current')
+  if (savedStats) {
+    todayCompleted.value = savedStats.completed || 0
+  }
+  
+  // 加载任务完成状态
+  const savedTasks = await loadData('todayStats', 'tasks')
+  if (savedTasks && todayTasks.value) {
+    const completedMap = savedTasks as Record<number, boolean>
+    todayTasks.value = todayTasks.value.map(task => ({
+      ...task,
+      completed: completedMap[task.id] || false
+    }))
+    todayCompleted.value = todayTasks.value.filter(t => t.completed).length
+  }
+
+  // 启动自然衰减
   decayInterval = window.setInterval(() => {
     catState.value.hunger = Math.max(0, catState.value.hunger - 2)
     catState.value.thirst = Math.max(0, catState.value.thirst - 3)
@@ -114,6 +175,18 @@ onMounted(() => {
 
 // 3. 今日成就统计
 const todayCompleted = ref(0)
+
+// 自动保存今日完成数
+watch(todayCompleted, (newVal) => {
+  autoSave('todayStats', { completed: newVal }, 'current')
+  // 同时保存任务完成状态
+  const taskStatus: Record<number, boolean> = {}
+  todayTasks.value?.forEach(task => {
+    taskStatus[task.id] = task.completed
+  })
+  autoSave('todayStats', taskStatus, 'tasks')
+}, { immediate: false })
+
 const todayStats = computed(() => {
   const completed = todayCompleted.value
   const total = todayTasks.value?.length || 0
