@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, Calendar, CheckSquare, Users, DollarSign, FileText, Activity } from '@lucide/vue'
+import { ArrowLeft, Calendar, CheckSquare, Users, DollarSign, FileText, Activity, Edit, Trash2, X, Check } from '@lucide/vue'
+import SimpleGantt from '../components/SimpleGantt.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -126,6 +127,99 @@ const showNewQuoteModal = ref(false)
 const newQuote = ref({
   name: '', category: '搭建', costPrice: 0, quotePrice: 0, quantity: 1, remark: ''
 })
+
+// 甘特图数据
+const ganttTasks = ref([
+  { id: '1', name: '确认活动方案', start: '2024-03-01', end: '2024-03-10', progress: 100, color: '#34C759' },
+  { id: '2', name: '主视觉设计', start: '2024-03-11', end: '2024-03-25', progress: 60, color: '#007AFF' },
+  { id: '3', name: '展台搭建招标', start: '2024-03-15', end: '2024-03-20', progress: 100, color: '#34C759' },
+  { id: '4', name: '供应商合同签订', start: '2024-03-21', end: '2024-03-25', progress: 30, color: '#007AFF' },
+  { id: '5', name: '物料制作跟进', start: '2024-03-26', end: '2024-04-05', progress: 0, color: '#FF9500' },
+  { id: '6', name: '现场搭建', start: '2024-04-10', end: '2024-04-14', progress: 0, color: '#FF9500' },
+  { id: '7', name: '活动执行', start: '2024-04-15', end: '2024-04-15', progress: 0, color: '#FF9500' },
+])
+
+// ========== 编辑功能 ==========
+// 编辑任务
+const editingTask = ref<number | null>(null)
+const editTaskData = ref({ name: '', assignee: '', deadline: '', priority: 'medium', status: 'pending' })
+
+const startEditTask = (task: any) => {
+  editingTask.value = task.id
+  editTaskData.value = { ...task }
+}
+
+const saveTask = () => {
+  const index = tasks.value.findIndex(t => t.id === editingTask.value)
+  if (index !== -1) {
+    tasks.value[index] = { ...tasks.value[index], ...editTaskData.value }
+  }
+  editingTask.value = null
+}
+
+const cancelEditTask = () => {
+  editingTask.value = null
+}
+
+const deleteTask = (taskId: number) => {
+  if (confirm('确定删除此任务？')) {
+    tasks.value = tasks.value.filter(t => t.id !== taskId)
+  }
+}
+
+// 编辑供应商
+const editingSupplier = ref<number | null>(null)
+const editSupplierData = ref({ name: '', contact: '', contractAmount: 0, prepayment: 0, finalPayment: 0, settlement: 0, status: '合作中' })
+
+const startEditSupplier = (supplier: any) => {
+  editingSupplier.value = supplier.id
+  editSupplierData.value = { ...supplier }
+}
+
+const saveSupplier = () => {
+  const index = suppliers.value.findIndex(s => s.id === editingSupplier.value)
+  if (index !== -1) {
+    suppliers.value[index] = { ...suppliers.value[index], ...editSupplierData.value }
+  }
+  editingSupplier.value = null
+}
+
+const cancelEditSupplier = () => {
+  editingSupplier.value = null
+}
+
+const deleteSupplier = (supplierId: number) => {
+  if (confirm('确定删除此供应商？')) {
+    suppliers.value = suppliers.value.filter(s => s.id !== supplierId)
+  }
+}
+
+// 编辑报价
+const editingQuote = ref<number | null>(null)
+const editQuoteData = ref({ name: '', category: '搭建', costPrice: 0, quotePrice: 0, quantity: 1, remark: '' })
+
+const startEditQuote = (quote: any) => {
+  editingQuote.value = quote.id
+  editQuoteData.value = { ...quote }
+}
+
+const saveQuote = () => {
+  const index = quotes.value.findIndex(q => q.id === editingQuote.value)
+  if (index !== -1) {
+    quotes.value[index] = { ...quotes.value[index], ...editQuoteData.value }
+  }
+  editingQuote.value = null
+}
+
+const cancelEditQuote = () => {
+  editingQuote.value = null
+}
+
+const deleteQuote = (quoteId: number) => {
+  if (confirm('确定删除此报价项？')) {
+    quotes.value = quotes.value.filter(q => q.id !== quoteId)
+  }
+}
 </script>
 
 <template>
@@ -278,6 +372,19 @@ const newQuote = ref({
       </div>
     </div>
 
+    <!-- 甘特图 Tab -->
+    <div v-else-if="activeTab === 'gantt'" class="card">
+      <div class="flex items-center justify-between mb-6">
+        <h4 class="text-title-2">项目甘特图</h4>
+        <div class="flex items-center gap-2 text-sm text-apple-gray-400">
+          <span class="w-3 h-3 rounded-full bg-apple-green"></span> 已完成
+          <span class="w-3 h-3 rounded-full bg-apple-blue"></span> 进行中
+          <span class="w-3 h-3 rounded-full bg-apple-orange"></span> 未开始
+        </div>
+      </div>
+      <SimpleGantt :tasks="ganttTasks" />
+    </div>
+
     <!-- 任务 Tab -->
     <div v-else-if="activeTab === 'tasks'" class="card overflow-hidden">
       <div class="flex items-center justify-between p-4 border-b border-apple-gray-100">
@@ -292,33 +399,70 @@ const newQuote = ref({
             <th class="text-left p-4 text-caption font-medium">截止日期</th>
             <th class="text-left p-4 text-caption font-medium">优先级</th>
             <th class="text-left p-4 text-caption font-medium">状态</th>
+            <th class="text-left p-4 text-caption font-medium w-24">操作</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="task in tasks" :key="task.id" class="border-t border-apple-gray-100 hover:bg-apple-bg/50 transition-colors">
-            <td class="p-4">
-              <div class="flex items-center gap-3">
-                <input type="checkbox" :checked="task.status === 'completed'" class="w-4 h-4 rounded border-apple-gray-100">
-                <span class="text-body" :class="{ 'line-through text-apple-gray-400': task.status === 'completed' }">{{ task.name }}</span>
-              </div>
-            </td>
-            <td class="p-4 text-body">{{ task.assignee }}</td>
-            <td class="p-4 text-body">{{ task.deadline }}</td>
-            <td class="p-4">
-              <span class="tag" :class="{
-                'tag-red': task.priority === 'high',
-                'tag-orange': task.priority === 'medium',
-                'tag-gray': task.priority === 'low'
-              }">{{ task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低' }}</span>
-            </td>
-            <td class="p-4">
-              <span class="tag" :class="{
-                'tag-green': task.status === 'completed',
-                'tag-blue': task.status === 'in-progress',
-                'tag-red': task.status === 'overdue',
-                'tag-gray': task.status === 'pending'
-              }">{{ task.status === 'completed' ? '已完成' : task.status === 'in-progress' ? '进行中' : task.status === 'overdue' ? '已逾期' : '待处理' }}</span>
-            </td>
+          <tr v-for="task in tasks" :key="task.id" class="border-t border-apple-gray-100 hover:bg-apple-bg/50 transition-colors group">
+            <!-- 编辑模式 -->
+            <template v-if="editingTask === task.id">
+              <td class="p-4"><input v-model="editTaskData.name" class="w-full px-2 py-1 border rounded text-sm" /></td>
+              <td class="p-4"><input v-model="editTaskData.assignee" class="w-full px-2 py-1 border rounded text-sm" /></td>
+              <td class="p-4"><input v-model="editTaskData.deadline" type="date" class="w-full px-2 py-1 border rounded text-sm" /></td>
+              <td class="p-4">
+                <select v-model="editTaskData.priority" class="px-2 py-1 border rounded text-sm">
+                  <option value="high">高</option>
+                  <option value="medium">中</option>
+                  <option value="low">低</option>
+                </select>
+              </td>
+              <td class="p-4">
+                <select v-model="editTaskData.status" class="px-2 py-1 border rounded text-sm">
+                  <option value="completed">已完成</option>
+                  <option value="in-progress">进行中</option>
+                  <option value="overdue">已逾期</option>
+                  <option value="pending">待处理</option>
+                </select>
+              </td>
+              <td class="p-4">
+                <div class="flex items-center gap-1">
+                  <button @click="saveTask" class="p-1 text-apple-green hover:bg-green-50 rounded"><Check class="w-4 h-4" /></button>
+                  <button @click="cancelEditTask" class="p-1 text-apple-gray-400 hover:bg-apple-bg rounded"><X class="w-4 h-4" /></button>
+                </div>
+              </td>
+            </template>
+            <!-- 显示模式 -->
+            <template v-else>
+              <td class="p-4">
+                <div class="flex items-center gap-3">
+                  <input type="checkbox" :checked="task.status === 'completed'" class="w-4 h-4 rounded border-apple-gray-100">
+                  <span class="text-body" :class="{ 'line-through text-apple-gray-400': task.status === 'completed' }">{{ task.name }}</span>
+                </div>
+              </td>
+              <td class="p-4 text-body">{{ task.assignee }}</td>
+              <td class="p-4 text-body">{{ task.deadline }}</td>
+              <td class="p-4">
+                <span class="tag" :class="{
+                  'tag-red': task.priority === 'high',
+                  'tag-orange': task.priority === 'medium',
+                  'tag-gray': task.priority === 'low'
+                }">{{ task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低' }}</span>
+              </td>
+              <td class="p-4">
+                <span class="tag" :class="{
+                  'tag-green': task.status === 'completed',
+                  'tag-blue': task.status === 'in-progress',
+                  'tag-red': task.status === 'overdue',
+                  'tag-gray': task.status === 'pending'
+                }">{{ task.status === 'completed' ? '已完成' : task.status === 'in-progress' ? '进行中' : task.status === 'overdue' ? '已逾期' : '待处理' }}</span>
+              </td>
+              <td class="p-4">
+                <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button @click="startEditTask(task)" class="p-1 text-apple-gray-400 hover:text-apple-blue rounded"><Edit class="w-4 h-4" /></button>
+                  <button @click="deleteTask(task.id)" class="p-1 text-apple-gray-400 hover:text-apple-red rounded"><Trash2 class="w-4 h-4" /></button>
+                </div>
+              </td>
+            </template>
           </tr>
         </tbody>
       </table>
@@ -362,25 +506,57 @@ const newQuote = ref({
               <th class="text-right p-4 text-caption font-medium">尾款</th>
               <th class="text-right p-4 text-caption font-medium">结算金额</th>
               <th class="text-left p-4 text-caption font-medium">状态</th>
+              <th class="text-left p-4 text-caption font-medium w-24">操作</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="supplier in suppliers" :key="supplier.id" class="border-t border-apple-gray-100 hover:bg-apple-bg/50 transition-colors">
-              <td class="p-4">
-                <p class="text-body font-medium">{{ supplier.name }}</p>
-              </td>
-              <td class="p-4 text-body">{{ supplier.contact }}</td>
-              <td class="p-4 text-right font-mono text-body">¥{{ supplier.contractAmount.toLocaleString() }}</td>
-              <td class="p-4 text-right font-mono text-body">¥{{ supplier.prepayment.toLocaleString() }}</td>
-              <td class="p-4 text-right font-mono text-body">¥{{ supplier.finalPayment.toLocaleString() }}</td>
-              <td class="p-4 text-right font-mono text-body">{{ supplier.settlement > 0 ? '¥' + supplier.settlement.toLocaleString() : '-' }}</td>
-              <td class="p-4">
-                <span class="tag" :class="{
-                  'tag-blue': supplier.status === '合作中',
-                  'tag-green': supplier.status === '已结算',
-                  'tag-gray': supplier.status === '已终止'
-                }">{{ supplier.status }}</span>
-              </td>
+            <tr v-for="supplier in suppliers" :key="supplier.id" class="border-t border-apple-gray-100 hover:bg-apple-bg/50 transition-colors group">
+              <!-- 编辑模式 -->
+              <template v-if="editingSupplier === supplier.id">
+                <td class="p-4"><input v-model="editSupplierData.name" class="w-full px-2 py-1 border rounded text-sm" /></td>
+                <td class="p-4"><input v-model="editSupplierData.contact" class="w-full px-2 py-1 border rounded text-sm" /></td>
+                <td class="p-4"><input v-model.number="editSupplierData.contractAmount" type="number" class="w-full px-2 py-1 border rounded text-sm text-right" /></td>
+                <td class="p-4"><input v-model.number="editSupplierData.prepayment" type="number" class="w-full px-2 py-1 border rounded text-sm text-right" /></td>
+                <td class="p-4"><input v-model.number="editSupplierData.finalPayment" type="number" class="w-full px-2 py-1 border rounded text-sm text-right" /></td>
+                <td class="p-4"><input v-model.number="editSupplierData.settlement" type="number" class="w-full px-2 py-1 border rounded text-sm text-right" /></td>
+                <td class="p-4">
+                  <select v-model="editSupplierData.status" class="px-2 py-1 border rounded text-sm">
+                    <option value="合作中">合作中</option>
+                    <option value="已结算">已结算</option>
+                    <option value="已终止">已终止</option>
+                  </select>
+                </td>
+                <td class="p-4">
+                  <div class="flex items-center gap-1">
+                    <button @click="saveSupplier" class="p-1 text-apple-green hover:bg-green-50 rounded"><Check class="w-4 h-4" /></button>
+                    <button @click="cancelEditSupplier" class="p-1 text-apple-gray-400 hover:bg-apple-bg rounded"><X class="w-4 h-4" /></button>
+                  </div>
+                </td>
+              </template>
+              <!-- 显示模式 -->
+              <template v-else>
+                <td class="p-4">
+                  <p class="text-body font-medium">{{ supplier.name }}</p>
+                </td>
+                <td class="p-4 text-body">{{ supplier.contact }}</td>
+                <td class="p-4 text-right font-mono text-body">¥{{ supplier.contractAmount.toLocaleString() }}</td>
+                <td class="p-4 text-right font-mono text-body">¥{{ supplier.prepayment.toLocaleString() }}</td>
+                <td class="p-4 text-right font-mono text-body">¥{{ supplier.finalPayment.toLocaleString() }}</td>
+                <td class="p-4 text-right font-mono text-body">{{ supplier.settlement > 0 ? '¥' + supplier.settlement.toLocaleString() : '-' }}</td>
+                <td class="p-4">
+                  <span class="tag" :class="{
+                    'tag-blue': supplier.status === '合作中',
+                    'tag-green': supplier.status === '已结算',
+                    'tag-gray': supplier.status === '已终止'
+                  }">{{ supplier.status }}</span>
+                </td>
+                <td class="p-4">
+                  <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button @click="startEditSupplier(supplier)" class="p-1 text-apple-gray-400 hover:text-apple-blue rounded"><Edit class="w-4 h-4" /></button>
+                    <button @click="deleteSupplier(supplier.id)" class="p-1 text-apple-gray-400 hover:text-apple-red rounded"><Trash2 class="w-4 h-4" /></button>
+                  </div>
+                </td>
+              </template>
             </tr>
           </tbody>
         </table>
@@ -428,26 +604,59 @@ const newQuote = ref({
               <th class="text-right p-4 text-caption font-medium">数量</th>
               <th class="text-right p-4 text-caption font-medium">小计</th>
               <th class="text-left p-4 text-caption font-medium">备注</th>
+              <th class="text-left p-4 text-caption font-medium w-24">操作</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="quote in quotes" :key="quote.id" class="border-t border-apple-gray-100 hover:bg-apple-bg/50 transition-colors">
-              <td class="p-4">
-                <p class="text-body font-medium">{{ quote.name }}</p>
-              </td>
-              <td class="p-4">
-                <span class="tag" :class="{
-                  'tag-blue': quote.category === '搭建',
-                  'tag-orange': quote.category === '物料',
-                  'tag-green': quote.category === '人员',
-                  'tag-gray': quote.category === '其他'
-                }">{{ quote.category }}</span>
-              </td>
-              <td class="p-4 text-right font-mono text-body">¥{{ quote.costPrice.toLocaleString() }}</td>
-              <td class="p-4 text-right font-mono text-body">¥{{ quote.quotePrice.toLocaleString() }}</td>
-              <td class="p-4 text-right text-body">{{ quote.quantity }}</td>
-              <td class="p-4 text-right font-mono text-body font-medium">¥{{ (quote.quotePrice * quote.quantity).toLocaleString() }}</td>
-              <td class="p-4 text-caption">{{ quote.remark || '-' }}</td>
+            <tr v-for="quote in quotes" :key="quote.id" class="border-t border-apple-gray-100 hover:bg-apple-bg/50 transition-colors group">
+              <!-- 编辑模式 -->
+              <template v-if="editingQuote === quote.id">
+                <td class="p-4"><input v-model="editQuoteData.name" class="w-full px-2 py-1 border rounded text-sm" /></td>
+                <td class="p-4">
+                  <select v-model="editQuoteData.category" class="px-2 py-1 border rounded text-sm">
+                    <option value="搭建">搭建</option>
+                    <option value="物料">物料</option>
+                    <option value="人员">人员</option>
+                    <option value="其他">其他</option>
+                  </select>
+                </td>
+                <td class="p-4"><input v-model.number="editQuoteData.costPrice" type="number" class="w-full px-2 py-1 border rounded text-sm text-right" /></td>
+                <td class="p-4"><input v-model.number="editQuoteData.quotePrice" type="number" class="w-full px-2 py-1 border rounded text-sm text-right" /></td>
+                <td class="p-4"><input v-model.number="editQuoteData.quantity" type="number" class="w-full px-2 py-1 border rounded text-sm text-right" /></td>
+                <td class="p-4 text-right font-mono text-body">¥{{ (editQuoteData.quotePrice * editQuoteData.quantity).toLocaleString() }}</td>
+                <td class="p-4"><input v-model="editQuoteData.remark" class="w-full px-2 py-1 border rounded text-sm" /></td>
+                <td class="p-4">
+                  <div class="flex items-center gap-1">
+                    <button @click="saveQuote" class="p-1 text-apple-green hover:bg-green-50 rounded"><Check class="w-4 h-4" /></button>
+                    <button @click="cancelEditQuote" class="p-1 text-apple-gray-400 hover:bg-apple-bg rounded"><X class="w-4 h-4" /></button>
+                  </div>
+                </td>
+              </template>
+              <!-- 显示模式 -->
+              <template v-else>
+                <td class="p-4">
+                  <p class="text-body font-medium">{{ quote.name }}</p>
+                </td>
+                <td class="p-4">
+                  <span class="tag" :class="{
+                    'tag-blue': quote.category === '搭建',
+                    'tag-orange': quote.category === '物料',
+                    'tag-green': quote.category === '人员',
+                    'tag-gray': quote.category === '其他'
+                  }">{{ quote.category }}</span>
+                </td>
+                <td class="p-4 text-right font-mono text-body">¥{{ quote.costPrice.toLocaleString() }}</td>
+                <td class="p-4 text-right font-mono text-body">¥{{ quote.quotePrice.toLocaleString() }}</td>
+                <td class="p-4 text-right text-body">{{ quote.quantity }}</td>
+                <td class="p-4 text-right font-mono text-body font-medium">¥{{ (quote.quotePrice * quote.quantity).toLocaleString() }}</td>
+                <td class="p-4 text-caption">{{ quote.remark || '-' }}</td>
+                <td class="p-4">
+                  <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button @click="startEditQuote(quote)" class="p-1 text-apple-gray-400 hover:text-apple-blue rounded"><Edit class="w-4 h-4" /></button>
+                    <button @click="deleteQuote(quote.id)" class="p-1 text-apple-gray-400 hover:text-apple-red rounded"><Trash2 class="w-4 h-4" /></button>
+                  </div>
+                </td>
+              </template>
             </tr>
           </tbody>
           <tfoot class="bg-apple-bg font-medium">
