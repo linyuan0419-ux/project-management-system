@@ -116,7 +116,7 @@ onMounted(() => {
 const todayCompleted = ref(0)
 const todayStats = computed(() => {
   const completed = todayCompleted.value
-  const total = todayTasks.length
+  const total = todayTasks.value?.length || 0
   return {
     completed,
     total,
@@ -288,7 +288,7 @@ const recentActivities = [
       <section class="card col-span-2">
         <div class="flex items-center justify-between mb-6">
           <h3 class="text-title-1">今日行动</h3>
-          <span class="text-caption text-apple-gray-400">{{ todayStats.completed }}/{{ todayStats.total }} 已完成</span>
+          <span class="text-caption text-apple-gray-400">{{ todayStats.completed }}/{{ todayStats.total || 0 }} 已完成</span>
         </div>
         <!-- 获得奖励提示 -->
         <div v-if="showReward" class="mb-4 p-3 bg-green-50 rounded-apple-sm flex items-center gap-3 animate-reward">
@@ -376,7 +376,7 @@ const recentActivities = [
               <p class="text-caption">已完成</p>
             </div>
             <div class="text-center">
-              <p class="text-display text-2xl">{{ Math.max(0, todayStats.total - todayStats.completed) }}</p>
+              <p class="text-display text-2xl">{{ Math.max(0, (todayStats.total || 0) - todayStats.completed) }}</p>
               <p class="text-caption">待完成</p>
             </div>
           </div>
