@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { LayoutDashboard, Briefcase, Users, Palette, FileText, Settings } from '@lucide/vue'
+import { useAuthStore } from '../stores/auth'
+import { LayoutDashboard, Briefcase, Users, Palette, FileText, Settings, Shield, LogOut, User } from '@lucide/vue'
 
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
 
 const navItems = [
   { name: '工作台', path: '/', icon: LayoutDashboard },
@@ -14,11 +16,21 @@ const navItems = [
   { name: '周报', path: '/reports', icon: FileText },
 ]
 
+// 管理员额外菜单
+const adminNavItems = [
+  { name: '用户管理', path: '/users', icon: Shield },
+]
+
 const isActive = (path: string) => {
   if (path === '/') {
     return route.path === '/'
   }
   return route.path.startsWith(path)
+}
+
+const handleLogout = () => {
+  authStore.logout()
+  router.push('/login')
 }
 
 // 新建项目弹窗
@@ -44,10 +56,8 @@ const projectStages = [
 ]
 
 const createProject = () => {
-  // 这里应该调用API保存项目
   console.log('创建项目:', newProject.value)
   showNewProjectModal.value = false
-  // 重置表单
   newProject.value = {
     name: '',
     client: '',
@@ -59,7 +69,6 @@ const createProject = () => {
     endDate: '',
     description: '',
   }
-  // 刷新页面或跳转到项目列表
   router.push('/projects')
 }
 </script>
@@ -84,14 +93,47 @@ const createProject = () => {
             <component :is="item.icon" class="w-5 h-5" />
             <span class="text-body font-medium">{{ item.name }}</span>
           </router-link>
+
+          <!-- 管理员菜单 -->
+          <template v-if="authStore.isAdmin">
+            <div class="pt-4 mt-4 border-t border-apple-gray-100">
+              <p class="px-4 text-xs text-apple-gray-400 mb-2">管理</p>
+              <router-link
+                v-for="item in adminNavItems"
+                :key="item.path"
+                :to="item.path"
+                class="flex items-center gap-3 px-4 py-3 rounded-apple-sm transition-all duration-200"
+                :class="isActive(item.path) 
+                  ? 'bg-apple-red text-white' 
+                  : 'text-apple-gray-900 hover:bg-apple-bg'"
+              >
+                <component :is="item.icon" class="w-5 h-5" />
+                <span class="text-body font-medium">{{ item.name }}</span>
+              </router-link>
+            </div>
+          </template>
         </nav>
       </div>
       
-      <!-- 底部设置 -->
+      <!-- 底部用户信息 -->
       <div class="absolute bottom-0 left-0 right-0 p-6 border-t border-apple-gray-100">
-        <button class="flex items-center gap-3 px-4 py-3 text-apple-gray-400 hover:text-apple-gray-900 transition-colors">
-          <Settings class="w-5 h-5" />
-          <span class="text-body">设置</span>
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-full bg-apple-blue flex items-center justify-center text-white font-medium">
+            {{ authStore.currentUser?.name.charAt(0) }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-body font-medium truncate">{{ authStore.currentUser?.name }}</p>
+            <p class="text-caption truncate">
+              {{ authStore.currentUser?.department }} · {{ authStore.isAdmin ? '管理员' : '用户' }}
+            </p>
+          </div>
+        </div>
+        <button 
+          @click="handleLogout" 
+          class="flex items-center gap-3 px-4 py-3 w-full text-apple-gray-400 hover:text-apple-red hover:bg-red-50 rounded-apple-sm transition-colors"
+        >
+          <LogOut class="w-5 h-5" />
+          <span class="text-body">退出登录</span>
         </button>
       </div>
     </aside>
