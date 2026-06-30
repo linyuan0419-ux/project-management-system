@@ -97,7 +97,7 @@ const getRoleText = (role: UserRole) => {
         <p class="text-caption mt-1">管理系统用户账号和权限</p>
       </div>
       <button 
-        v-if="authStore.isAdmin"
+        v-if="authStore.canManageUsers"
         @click="openAddModal" 
         class="btn-primary flex items-center gap-2"
       >

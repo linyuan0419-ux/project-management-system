@@ -175,8 +175,8 @@ const departments = ['管理部', '项目部', '创意部', '财务部', '技术
           <div>
             <h4 class="text-title-2">{{ authStore.currentUser?.name }}</h4>
             <div class="flex items-center gap-2 mt-1">
-              <span class="tag" :class="authStore.isAdmin ? 'tag-red' : 'tag-blue'">
-                {{ authStore.isAdmin ? '管理员' : '普通用户' }}
+              <span class="tag" :class="authStore.isDeveloper ? 'tag-red' : authStore.isManager ? 'tag-blue' : 'tag-gray'">
+                {{ authStore.isDeveloper ? '开发者' : authStore.isManager ? '管理员' : '普通用户' }}
               </span>
               <span class="text-caption">{{ authStore.currentUser?.department }}</span>
             </div>
