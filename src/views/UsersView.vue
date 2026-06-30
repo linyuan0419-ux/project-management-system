@@ -251,14 +251,20 @@ const getRoleText = (role: UserRole) => {
             <label class="text-caption block mb-2">用户名 <span class="text-apple-red">*</span></label>
             <input v-model="userForm.username" type="text" class="w-full px-4 py-2 border border-apple-gray-100 rounded-apple-sm focus:outline-none focus:border-apple-blue" placeholder="输入用户名" :disabled="isEditing">
           </div>
-          <!-- 生成的密码显示 -->
-          <div v-if="!isEditing && generatedPassword" class="p-4 bg-apple-bg rounded-apple-sm">
-            <label class="text-caption block mb-2">初始密码（自动生成）</label>
+          <!-- 密码（根据用户名自动生成） -->
+          <div v-if="!isEditing">
+            <label class="text-caption block mb-2">密码 <span class="text-apple-red">*</span></label>
             <div class="flex items-center gap-3">
-              <code class="flex-1 px-3 py-2 bg-white rounded border border-apple-gray-100 font-mono text-body">{{ generatedPassword }}</code>
+              <input 
+                :value="generatedPassword || '输入用户名后自动生成'" 
+                type="text" 
+                readonly
+                class="flex-1 px-4 py-2 bg-apple-bg border border-apple-gray-100 rounded-apple-sm font-mono text-body"
+              >
               <button 
+                v-if="generatedPassword"
                 @click="navigator.clipboard.writeText(generatedPassword); alert('密码已复制到剪贴板')" 
-                class="px-3 py-2 text-caption text-apple-blue hover:bg-apple-blue/10 rounded-apple-sm transition-colors whitespace-nowrap"
+                class="px-4 py-2 text-caption text-apple-blue hover:bg-apple-blue/10 rounded-apple-sm transition-colors whitespace-nowrap border border-apple-blue"
               >
                 复制
               </button>
