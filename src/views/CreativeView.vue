@@ -246,18 +246,31 @@ const deleteDesigner = (designer: string) => {
   const designerWorks = schedules.value.filter(s => s.designer === designer)
   
   if (confirm(`确定要删除设计师 "${designer}" 吗？\n\n该设计师有 ${designerWorks.length} 个排期，删除后将同步清除这些排期。\n\n此操作不可恢复！`)) {
-    // 删除该设计师的所有排期
-    schedules.value = schedules.value.filter(s => s.designer !== designer)
-    // 删除设计师
-    designers.value = designers.value.filter(d => d !== designer)
-    // 如果当前筛选的是该设计师，重置筛选
-    if (selectedDesigner.value === designer) {
-      selectedDesigner.value = 'all'
-    }
-    
-    // 显示删除成功提示
-    alert(`已删除设计师 "${designer}" 及其 ${designerWorks.length} 个排期`)
+    forceDeleteDesigner(designer)
   }
+}
+
+// 强制删除设计师（无确认，用于演示）
+const forceDeleteDesigner = (designer: string) => {
+  // 检查权限
+  if (!authStore.isDeveloper) {
+    alert('只有开发者可以删除设计师')
+    return
+  }
+  
+  const designerWorks = schedules.value.filter(s => s.designer === designer)
+  
+  // 删除该设计师的所有排期
+  schedules.value = schedules.value.filter(s => s.designer !== designer)
+  // 删除设计师
+  designers.value = designers.value.filter(d => d !== designer)
+  // 如果当前筛选的是该设计师，重置筛选
+  if (selectedDesigner.value === designer) {
+    selectedDesigner.value = 'all'
+  }
+  
+  // 显示删除成功提示
+  alert(`已删除设计师 "${designer}" 及其 ${designerWorks.length} 个排期`)
 }
 
 // 获取本周日期
@@ -355,13 +368,13 @@ const isScheduleOnDay = (schedule: any, dayIndex: number): boolean => {
             <button @click="showAddDesignerModal = true" class="p-2 rounded-apple-sm bg-apple-bg hover:bg-apple-gray-100 transition-colors" title="添加设计师">
               <Plus class="w-4 h-4" />
             </button>
-            <!-- 开发者测试：一键删除小刘（演示用） -->
+            <!-- 开发者测试：一键删除小陈（演示用，小陈有0个排期） -->
             <button 
-              v-if="authStore.isDeveloper && designers.includes('小刘')" 
-              @click="deleteDesigner('小刘')"
+              v-if="authStore.isDeveloper && designers.includes('小陈')" 
+              @click="forceDeleteDesigner('小陈')"
               class="px-3 py-2 rounded-apple-sm bg-red-50 text-apple-red text-sm hover:bg-red-100 transition-colors"
             >
-              测试：删除小刘
+              测试：删除小陈
             </button>
           </div>
         </div>
