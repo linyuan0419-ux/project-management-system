@@ -704,11 +704,11 @@ const isScheduleOnDay = (schedule: any, dayIndex: number): boolean => {
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="text-caption block mb-2">开始日期</label>
-              <input v-model="newWork.startDate" type="date" class="w-full px-4 py-2 border border-apple-gray-100 rounded-apple-sm focus:outline-none focus:border-apple-blue">
+              <input v-model="newWork.startDate" type="date" :min="getToday()" class="w-full px-4 py-2 border border-apple-gray-100 rounded-apple-sm focus:outline-none focus:border-apple-blue">
             </div>
             <div>
               <label class="text-caption block mb-2">结束日期</label>
-              <input v-model="newWork.endDate" type="date" class="w-full px-4 py-2 border border-apple-gray-100 rounded-apple-sm focus:outline-none focus:border-apple-blue">
+              <input v-model="newWork.endDate" type="date" :min="newWork.startDate || getToday()" class="w-full px-4 py-2 border border-apple-gray-100 rounded-apple-sm focus:outline-none focus:border-apple-blue">
             </div>
           </div>
         </div>
