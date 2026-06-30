@@ -98,6 +98,26 @@ const createClient = () => {
     phone: '',
   }
 }
+
+// 新建用户弹窗
+const showNewUserModal = ref(false)
+const newUser = ref({
+  name: '',
+  username: '',
+  role: 'user',
+  department: '技术部',
+})
+
+const createUser = () => {
+  console.log('创建用户:', newUser.value)
+  showNewUserModal.value = false
+  newUser.value = {
+    name: '',
+    username: '',
+    role: 'user',
+    department: '技术部',
+  }
+}
 </script>
 
 <template>
@@ -190,7 +210,15 @@ const createClient = () => {
               <span>新建客户</span>
             </button>
             <button 
-              v-else-if="route.path !== '/creative'" 
+              v-else-if="route.path === '/users' && authStore.isDeveloper" 
+              @click="showNewUserModal = true" 
+              class="btn-primary flex items-center gap-2"
+            >
+              <span class="text-lg">+</span>
+              <span>新建用户</span>
+            </button>
+            <button 
+              v-else-if="route.path !== '/creative' && route.path !== '/users'" 
               @click="openNewProjectModal" 
               class="btn-primary flex items-center gap-2"
             >
@@ -343,6 +371,66 @@ const createClient = () => {
         <div class="flex items-center justify-end gap-3 mt-8 pt-6 border-t border-apple-gray-100">
           <button @click="showNewClientModal = false" class="px-6 py-2 text-body hover:bg-apple-bg rounded-apple-sm transition-colors">取消</button>
           <button @click="createClient" class="btn-primary" :disabled="!newClient.name">创建</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 新建用户弹窗 -->
+    <div v-if="showNewUserModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" @click.self="showNewUserModal = false">
+      <div class="bg-white rounded-apple p-8 w-[480px] max-w-[90vw]">
+        <div class="flex items-center justify-between mb-6">
+          <h4 class="text-title-1">新建用户</h4>
+          <button @click="showNewUserModal = false" class="p-2 hover:bg-apple-bg rounded-apple-sm transition-colors">
+            <X class="w-5 h-5 text-apple-gray-400" />
+          </button>
+        </div>
+        
+        <div class="space-y-5">
+          <!-- 姓名 -->
+          <div>
+            <label class="text-caption block mb-2">姓名 <span class="text-apple-red">*</span></label>
+            <input v-model="newUser.name" type="text" class="w-full px-4 py-2 border border-apple-gray-100 rounded-apple-sm focus:outline-none focus:border-apple-blue" placeholder="输入用户姓名">
+          </div>
+
+          <!-- 用户名 -->
+          <div>
+            <label class="text-caption block mb-2">用户名 <span class="text-apple-red">*</span></label>
+            <input v-model="newUser.username" type="text" class="w-full px-4 py-2 border border-apple-gray-100 rounded-apple-sm focus:outline-none focus:border-apple-blue" placeholder="用于登录的用户名">
+          </div>
+
+          <!-- 角色 -->
+          <div>
+            <label class="text-caption block mb-2">角色</label>
+            <select v-model="newUser.role" class="w-full px-4 py-2 border border-apple-gray-100 rounded-apple-sm focus:outline-none focus:border-apple-blue">
+              <option value="user">普通用户</option>
+              <option value="manager">管理员</option>
+              <option value="developer">开发者</option>
+            </select>
+          </div>
+
+          <!-- 部门 -->
+          <div>
+            <label class="text-caption block mb-2">部门</label>
+            <select v-model="newUser.department" class="w-full px-4 py-2 border border-apple-gray-100 rounded-apple-sm focus:outline-none focus:border-apple-blue">
+              <option value="技术部">技术部</option>
+              <option value="管理部">管理部</option>
+              <option value="项目部">项目部</option>
+              <option value="创意部">创意部</option>
+              <option value="财务部">财务部</option>
+            </select>
+          </div>
+
+          <!-- 提示 -->
+          <div class="p-4 bg-apple-bg rounded-apple-sm">
+            <p class="text-caption text-apple-gray-400">
+              <span class="text-apple-blue">提示：</span>创建后系统将自动生成初始密码，格式为：首字母大写 + 123456
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 mt-8 pt-6 border-t border-apple-gray-100">
+          <button @click="showNewUserModal = false" class="px-6 py-2 text-body hover:bg-apple-bg rounded-apple-sm transition-colors">取消</button>
+          <button @click="createUser" class="btn-primary" :disabled="!newUser.name || !newUser.username">创建</button>
         </div>
       </div>
     </div>
