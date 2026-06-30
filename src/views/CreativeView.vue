@@ -2,6 +2,9 @@
 import { ref, computed } from 'vue'
 import { Palette, Box, Lightbulb, Calendar, CheckSquare, User, Search, Plus, Edit2, Trash2, X, Check, BarChart3 } from '@lucide/vue'
 import SimpleGantt from '../components/SimpleGantt.vue'
+import { useAuthStore } from '../stores/auth'
+
+const authStore = useAuthStore()
 
 // 创意工作类型
 const creativeTypes = [
@@ -232,10 +235,25 @@ const addDesigner = () => {
   }
 }
 
-// 删除设计师
+// 删除设计师（仅开发者）
 const deleteDesigner = (designer: string) => {
-  if (confirm(`确定要删除设计师 "${designer}" 吗？\n注意：该设计师的所有排期将被保留，但无法再新建排期给此设计师。`)) {
+  // 检查权限
+  if (!authStore.isDeveloper) {
+    alert('只有开发者可以删除设计师')
+    return
+  }
+  
+  const designerWorks = schedules.value.filter(s => s.designer === designer)
+  
+  if (confirm(`确定要删除设计师 "${designer}" 吗？\n\n该设计师有 ${designerWorks.length} 个排期，删除后将同步清除这些排期。\n\n此操作不可恢复！`)) {
+    // 删除该设计师的所有排期
+    schedules.value = schedules.value.filter(s => s.designer !== designer)
+    // 删除设计师
     designers.value = designers.value.filter(d => d !== designer)
+    // 如果当前筛选的是该设计师，重置筛选
+    if (selectedDesigner.value === designer) {
+      selectedDesigner.value = 'all'
+    }
   }
 }
 
@@ -321,9 +339,9 @@ const isScheduleOnDay = (schedule: any, dayIndex: number): boolean => {
             >
               {{ designer }}
               <span class="text-xs opacity-70">({{ getDesignerStats(designer).total }})</span>
-              <!-- 删除设计师按钮 -->
+              <!-- 删除设计师按钮（仅开发者可见） -->
               <button
-                v-if="selectedDesigner !== designer"
+                v-if="authStore.isDeveloper && selectedDesigner !== designer"
                 @click.stop="deleteDesigner(designer)"
                 class="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 rounded transition-all"
                 title="删除设计师"
@@ -492,7 +510,13 @@ const isScheduleOnDay = (schedule: any, dayIndex: number): boolean => {
                   <button @click="startEdit(schedule)" class="p-1.5 text-apple-gray-400 hover:text-apple-blue hover:bg-apple-bg rounded transition-colors" title="编辑">
                     <Edit2 class="w-4 h-4" />
                   </button>
-                  <button @click="deleteSchedule(schedule.id)" class="p-1.5 text-apple-gray-400 hover:text-apple-red hover:bg-red-50 rounded transition-colors" title="删除">
+                  <!-- 仅开发者可删除排期 -->
+                  <button 
+                    v-if="authStore.isDeveloper"
+                    @click="deleteSchedule(schedule.id)" 
+                    class="p-1.5 text-apple-gray-400 hover:text-apple-red hover:bg-red-50 rounded transition-colors" 
+                    title="删除"
+                  >
                     <Trash2 class="w-4 h-4" />
                   </button>
                 </div>
