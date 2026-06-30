@@ -488,11 +488,11 @@ const isScheduleOnDay = (schedule: any, dayIndex: number): boolean => {
                 }">{{ schedule.status }}</span>
               </td>
               <td class="p-4">
-                <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button @click="startEdit(schedule)" class="p-1.5 text-apple-gray-400 hover:text-apple-blue rounded">
+                <div class="flex items-center gap-1">
+                  <button @click="startEdit(schedule)" class="p-1.5 text-apple-gray-400 hover:text-apple-blue hover:bg-apple-bg rounded transition-colors" title="编辑">
                     <Edit2 class="w-4 h-4" />
                   </button>
-                  <button @click="deleteSchedule(schedule.id)" class="p-1.5 text-apple-gray-400 hover:text-apple-red rounded">
+                  <button @click="deleteSchedule(schedule.id)" class="p-1.5 text-apple-gray-400 hover:text-apple-red hover:bg-red-50 rounded transition-colors" title="删除">
                     <Trash2 class="w-4 h-4" />
                   </button>
                 </div>
