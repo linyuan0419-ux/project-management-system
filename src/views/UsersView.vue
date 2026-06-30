@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useAuthStore } from '../stores/auth'
-import { Users, Plus, Edit, Trash2, Shield, User, X, Check } from '@lucide/vue'
+import { Users, Plus, Edit, Trash2, Shield, User, X, Check, Key } from '@lucide/vue'
 
 const authStore = useAuthStore()
 
@@ -50,6 +50,16 @@ const saveUser = () => {
 const deleteUser = (userId: number) => {
   if (confirm('确定要删除此用户吗？此操作不可恢复。')) {
     authStore.deleteUser(userId)
+  }
+}
+
+// 重置密码
+const resetUserPassword = (user: any) => {
+  if (confirm(`确定要重置 ${user.name} 的密码吗？\n重置后密码将与用户名相同。`)) {
+    const success = authStore.resetPassword(user.id)
+    if (success) {
+      alert(`已重置 ${user.name} 的密码为: ${user.username}`)
+    }
   }
 }
 
@@ -157,6 +167,13 @@ const getRoleText = (role: string) => {
                   :title="user.id === authStore.currentUser?.id ? '不能编辑自己' : '编辑'"
                 >
                   <Edit class="w-4 h-4" />
+                </button>
+                <button 
+                  @click="resetUserPassword(user)" 
+                  class="p-1.5 text-apple-gray-400 hover:text-apple-orange rounded transition-colors"
+                  :title="'重置密码'"
+                >
+                  <Key class="w-4 h-4" />
                 </button>
                 <button 
                   @click="deleteUser(user.id)" 

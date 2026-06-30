@@ -8,6 +8,7 @@ import CreativeView from '../views/CreativeView.vue'
 import ProjectDetailView from '../views/ProjectDetailView.vue'
 import LoginView from '../views/LoginView.vue'
 import UsersView from '../views/UsersView.vue'
+import ProfileView from '../views/ProfileView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -59,6 +60,12 @@ const router = createRouter({
       name: 'users',
       component: UsersView,
       meta: { title: '用户管理', requiresAuth: true, requiresAdmin: true },
+    },
+    {
+      path: '/profile',
+      name: 'profile',
+      component: ProfileView,
+      meta: { title: '个人设置', requiresAuth: true },
     },
   ],
 })

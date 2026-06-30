@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { LayoutDashboard, Briefcase, Users, Palette, FileText, Settings, Shield, LogOut, User } from '@lucide/vue'
+import { LayoutDashboard, Briefcase, Users as UsersIcon, Palette, FileText, Settings, Shield, LogOut, User } from '@lucide/vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -11,7 +11,7 @@ const authStore = useAuthStore()
 const navItems = [
   { name: '工作台', path: '/', icon: LayoutDashboard },
   { name: '项目', path: '/projects', icon: Briefcase },
-  { name: '客户', path: '/clients', icon: Users },
+  { name: '客户', path: '/clients', icon: UsersIcon },
   { name: '创意部', path: '/creative', icon: Palette },
   { name: '周报', path: '/reports', icon: FileText },
 ]
@@ -117,7 +117,11 @@ const createProject = () => {
       
       <!-- 底部用户信息 -->
       <div class="absolute bottom-0 left-0 right-0 p-6 border-t border-apple-gray-100">
-        <div class="flex items-center gap-3 mb-4">
+        <router-link
+          to="/profile"
+          class="flex items-center gap-3 mb-4 p-2 -mx-2 rounded-apple-sm hover:bg-apple-bg transition-colors cursor-pointer"
+          :class="{ 'bg-apple-bg': route.path === '/profile' }"
+        >
           <div class="w-10 h-10 rounded-full bg-apple-blue flex items-center justify-center text-white font-medium">
             {{ authStore.currentUser?.name.charAt(0) }}
           </div>
@@ -127,7 +131,7 @@ const createProject = () => {
               {{ authStore.currentUser?.department }} · {{ authStore.isAdmin ? '管理员' : '用户' }}
             </p>
           </div>
-        </div>
+        </router-link>
         <button 
           @click="handleLogout" 
           class="flex items-center gap-3 px-4 py-3 w-full text-apple-gray-400 hover:text-apple-red hover:bg-red-50 rounded-apple-sm transition-colors"
