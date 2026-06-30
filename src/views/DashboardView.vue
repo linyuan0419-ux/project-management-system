@@ -44,18 +44,6 @@ watch(inventory, (newVal) => {
   autoSave('inventory', newVal, 'current')
 }, { deep: true })
 
-// 小猫表情和状态
-const catStatus = computed(() => {
-  const { hunger, thirst, mood, energy } = catState.value
-  const avg = (hunger + thirst + mood + energy) / 4
-  
-  if (avg >= 80) return { emoji: '😸', text: '开心', color: '#34C759', desc: '喵~ 今天工作很顺利呢！' }
-  if (avg >= 60) return { emoji: '😺', text: '满足', color: '#007AFF', desc: '喵喵~ 状态不错哦' }
-  if (avg >= 40) return { emoji: '😐', text: '一般', color: '#FF9500', desc: '喵... 有点饿了' }
-  if (avg >= 20) return { emoji: '😿', text: '疲惫', color: '#FF3B30', desc: '喵喵... 需要休息' }
-  return { emoji: '😾', text: '不开心', color: '#8E8E93', desc: '喵呜... 快给我吃的！' }
-})
-
 // 食物库存
 const inventory = ref({
   food: 3,     // 猫粮
