@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { CheckSquare, AlertCircle, Briefcase, Clock, Sparkles, Sun, Moon, Coffee, Heart, Droplets, Fish, Cat, Smile } from '@lucide/vue'
 import { loadData, autoSave } from '../stores/dbSync'
+import { getRandomQuote, getGreetingByTime } from '../data/healingQuotes'
 
 const router = useRouter()
 
@@ -125,33 +126,38 @@ onUnmounted(() => {
 })
 
 // ========== 治愈系功能 ==========
-// 1. 人性化问候语
+// 1. 人性化问候语（结合治愈文案）
 const greeting = computed(() => {
   const hour = new Date().getHours()
+  let icon = Coffee
+  let color = '#007AFF'
+  
   if (hour >= 6 && hour < 12) {
-    return { text: '早上好，新的一天开始了', icon: Sun, color: '#FF9500' }
+    icon = Sun
+    color = '#FF9500'
   } else if (hour >= 12 && hour < 18) {
-    return { text: '下午好，记得抽空休息一下', icon: Coffee, color: '#007AFF' }
+    icon = Coffee
+    color = '#007AFF'
   } else {
-    return { text: '晚上好，今天辛苦了', icon: Moon, color: '#5856D6' }
+    icon = Moon
+    color = '#5856D6'
+  }
+  
+  return { 
+    title: todayQuote.value.title || getGreetingByTime(), 
+    subtitle: todayQuote.value.subtitle || '星光不问赶路人，时光不负有心人。',
+    icon, 
+    color 
   }
 })
 
-// 2. 鼓励签文案库
-const quotes = [
-  '每一个项目，都是成长的阶梯。',
-  '今天的努力，是明天的底气。',
-  '慢慢来，好戏都在烟火里。',
-  '你已经做得很棒了，继续加油！',
-  '保持热爱，奔赴山海。',
-  '星光不问赶路人，时光不负有心人。',
-  '今天的你，比昨天更优秀。',
-  '所有的美好，都在路上。',
-]
-const todayQuote = ref('')
+// 2. 治愈系文案（每次随机）
+const todayQuote = ref({ title: '', subtitle: '' })
+const refreshQuote = () => {
+  todayQuote.value = getRandomQuote()
+}
 onMounted(() => {
-  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24))
-  todayQuote.value = quotes[dayOfYear % quotes.length]
+  refreshQuote() // 首次加载随机文案
 })
 
 // 3. 今日成就统计
@@ -252,8 +258,8 @@ const recentActivities = [
           <component :is="greeting.icon" class="w-6 h-6" :style="{ color: greeting.color }" />
         </div>
         <div class="flex-1">
-          <p class="text-title-2">{{ greeting.text }}</p>
-          <p class="text-body text-apple-gray-400 mt-1">{{ todayQuote }}</p>
+          <p class="text-title-2">{{ greeting.title }}</p>
+          <p class="text-body text-apple-gray-400 mt-1">{{ greeting.subtitle }}</p>
         </div>
         <div class="flex items-center gap-2 text-apple-gray-400">
           <Sparkles class="w-4 h-4" />
