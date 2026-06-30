@@ -254,6 +254,9 @@ const deleteDesigner = (designer: string) => {
     if (selectedDesigner.value === designer) {
       selectedDesigner.value = 'all'
     }
+    
+    // 显示删除成功提示
+    alert(`已删除设计师 "${designer}" 及其 ${designerWorks.length} 个排期`)
   }
 }
 
@@ -349,8 +352,16 @@ const isScheduleOnDay = (schedule: any, dayIndex: number): boolean => {
                 <Trash2 class="w-3 h-3 text-apple-red" />
               </button>
             </button>
-            <button @click="showAddDesignerModal = true" class="p-2 rounded-apple-sm bg-apple-bg hover:bg-apple-gray-100 transition-colors">
+            <button @click="showAddDesignerModal = true" class="p-2 rounded-apple-sm bg-apple-bg hover:bg-apple-gray-100 transition-colors" title="添加设计师">
               <Plus class="w-4 h-4" />
+            </button>
+            <!-- 开发者测试：一键删除小刘（演示用） -->
+            <button 
+              v-if="authStore.isDeveloper && designers.includes('小刘')" 
+              @click="deleteDesigner('小刘')"
+              class="px-3 py-2 rounded-apple-sm bg-red-50 text-apple-red text-sm hover:bg-red-100 transition-colors"
+            >
+              测试：删除小刘
             </button>
           </div>
         </div>
