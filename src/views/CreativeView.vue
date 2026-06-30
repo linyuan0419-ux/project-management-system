@@ -254,7 +254,7 @@ const deleteDesigner = (designer: string) => {
 const forceDeleteDesigner = (designer: string) => {
   // 检查权限
   if (!authStore.isDeveloper) {
-    alert('只有开发者可以删除设计师')
+    console.log('只有开发者可以删除设计师')
     return
   }
   
@@ -270,7 +270,7 @@ const forceDeleteDesigner = (designer: string) => {
   }
   
   // 显示删除成功提示
-  alert(`已删除设计师 "${designer}" 及其 ${designerWorks.length} 个排期`)
+  console.log(`已删除设计师 "${designer}" 及其 ${designerWorks.length} 个排期`)
 }
 
 // 获取本周日期
