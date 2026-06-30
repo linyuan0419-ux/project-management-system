@@ -3,6 +3,9 @@ import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Calendar, CheckSquare, Users, DollarSign, FileText, Activity, Edit, Trash2, X, Check } from '@lucide/vue'
 import SimpleGantt from '../components/SimpleGantt.vue'
+import { useAuthStore } from '../stores/auth'
+
+const authStore = useAuthStore()
 
 const route = useRoute()
 const router = useRouter()
@@ -161,10 +164,26 @@ const cancelEditTask = () => {
   editingTask.value = null
 }
 
-const deleteTask = (taskId: number) => {
-  if (confirm('确定删除此任务？')) {
-    tasks.value = tasks.value.filter(t => t.id !== taskId)
+// 删除任务确认弹窗
+const showDeleteTaskConfirm = ref(false)
+const taskToDelete = ref<number | null>(null)
+
+const openDeleteTaskConfirm = (taskId: number) => {
+  taskToDelete.value = taskId
+  showDeleteTaskConfirm.value = true
+}
+
+const confirmDeleteTask = () => {
+  if (taskToDelete.value) {
+    tasks.value = tasks.value.filter(t => t.id !== taskToDelete.value)
+    showDeleteTaskConfirm.value = false
+    taskToDelete.value = null
   }
+}
+
+const cancelDeleteTask = () => {
+  showDeleteTaskConfirm.value = false
+  taskToDelete.value = null
 }
 
 // 编辑供应商
@@ -188,10 +207,26 @@ const cancelEditSupplier = () => {
   editingSupplier.value = null
 }
 
-const deleteSupplier = (supplierId: number) => {
-  if (confirm('确定删除此供应商？')) {
-    suppliers.value = suppliers.value.filter(s => s.id !== supplierId)
+// 删除供应商确认弹窗
+const showDeleteSupplierConfirm = ref(false)
+const supplierToDelete = ref<number | null>(null)
+
+const openDeleteSupplierConfirm = (supplierId: number) => {
+  supplierToDelete.value = supplierId
+  showDeleteSupplierConfirm.value = true
+}
+
+const confirmDeleteSupplier = () => {
+  if (supplierToDelete.value) {
+    suppliers.value = suppliers.value.filter(s => s.id !== supplierToDelete.value)
+    showDeleteSupplierConfirm.value = false
+    supplierToDelete.value = null
   }
+}
+
+const cancelDeleteSupplier = () => {
+  showDeleteSupplierConfirm.value = false
+  supplierToDelete.value = null
 }
 
 // 编辑报价
@@ -215,10 +250,26 @@ const cancelEditQuote = () => {
   editingQuote.value = null
 }
 
-const deleteQuote = (quoteId: number) => {
-  if (confirm('确定删除此报价项？')) {
-    quotes.value = quotes.value.filter(q => q.id !== quoteId)
+// 删除报价确认弹窗
+const showDeleteQuoteConfirm = ref(false)
+const quoteToDelete = ref<number | null>(null)
+
+const openDeleteQuoteConfirm = (quoteId: number) => {
+  quoteToDelete.value = quoteId
+  showDeleteQuoteConfirm.value = true
+}
+
+const confirmDeleteQuote = () => {
+  if (quoteToDelete.value) {
+    quotes.value = quotes.value.filter(q => q.id !== quoteToDelete.value)
+    showDeleteQuoteConfirm.value = false
+    quoteToDelete.value = null
   }
+}
+
+const cancelDeleteQuote = () => {
+  showDeleteQuoteConfirm.value = false
+  quoteToDelete.value = null
 }
 </script>
 
@@ -458,8 +509,8 @@ const deleteQuote = (quoteId: number) => {
               </td>
               <td class="p-4">
                 <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button @click="startEditTask(task)" class="p-1 text-apple-gray-400 hover:text-apple-blue rounded"><Edit class="w-4 h-4" /></button>
-                  <button @click="deleteTask(task.id)" class="p-1 text-apple-gray-400 hover:text-apple-red rounded"><Trash2 class="w-4 h-4" /></button>
+                  <button @click="startEditTask(task)" class="p-1 text-apple-gray-400 hover:text-apple-blue rounded" title="编辑"><Edit class="w-4 h-4" /></button>
+                  <button @click="openDeleteTaskConfirm(task.id)" class="p-1 text-apple-gray-400 hover:text-apple-red rounded" title="删除"><Trash2 class="w-4 h-4" /></button>
                 </div>
               </td>
             </template>
@@ -552,8 +603,8 @@ const deleteQuote = (quoteId: number) => {
                 </td>
                 <td class="p-4">
                   <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button @click="startEditSupplier(supplier)" class="p-1 text-apple-gray-400 hover:text-apple-blue rounded"><Edit class="w-4 h-4" /></button>
-                    <button @click="deleteSupplier(supplier.id)" class="p-1 text-apple-gray-400 hover:text-apple-red rounded"><Trash2 class="w-4 h-4" /></button>
+                    <button @click="startEditSupplier(supplier)" class="p-1 text-apple-gray-400 hover:text-apple-blue rounded" title="编辑"><Edit class="w-4 h-4" /></button>
+                    <button @click="openDeleteSupplierConfirm(supplier.id)" class="p-1 text-apple-gray-400 hover:text-apple-red rounded" title="删除"><Trash2 class="w-4 h-4" /></button>
                   </div>
                 </td>
               </template>
@@ -652,8 +703,8 @@ const deleteQuote = (quoteId: number) => {
                 <td class="p-4 text-caption">{{ quote.remark || '-' }}</td>
                 <td class="p-4">
                   <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button @click="startEditQuote(quote)" class="p-1 text-apple-gray-400 hover:text-apple-blue rounded"><Edit class="w-4 h-4" /></button>
-                    <button @click="deleteQuote(quote.id)" class="p-1 text-apple-gray-400 hover:text-apple-red rounded"><Trash2 class="w-4 h-4" /></button>
+                    <button @click="startEditQuote(quote)" class="p-1 text-apple-gray-400 hover:text-apple-blue rounded" title="编辑"><Edit class="w-4 h-4" /></button>
+                    <button @click="openDeleteQuoteConfirm(quote.id)" class="p-1 text-apple-gray-400 hover:text-apple-red rounded" title="删除"><Trash2 class="w-4 h-4" /></button>
                   </div>
                 </td>
               </template>
@@ -803,6 +854,57 @@ const deleteQuote = (quoteId: number) => {
         <div class="flex items-center justify-end gap-3 mt-8">
           <button @click="showNewQuoteModal = false" class="px-6 py-2 text-body hover:bg-apple-bg rounded-apple-sm transition-colors">取消</button>
           <button @click="showNewQuoteModal = false" class="btn-primary">添加</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 删除任务确认弹窗 -->
+    <div v-if="showDeleteTaskConfirm" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" @click.self="cancelDeleteTask">
+      <div class="bg-white rounded-apple p-8 w-[400px] max-w-[90vw]">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="p-3 bg-red-100 rounded-full">
+            <Trash2 class="w-6 h-6 text-apple-red" />
+          </div>
+          <h4 class="text-title-1">确认删除任务</h4>
+        </div>
+        <p class="text-body mb-6">确定要删除此任务吗？此操作不可恢复。</p>
+        <div class="flex items-center justify-end gap-3">
+          <button @click="cancelDeleteTask" class="px-6 py-2 text-body hover:bg-apple-bg rounded-apple-sm transition-colors">取消</button>
+          <button @click="confirmDeleteTask" class="px-6 py-2 bg-apple-red text-white rounded-apple-sm hover:bg-red-600 transition-colors">确认删除</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 删除供应商确认弹窗 -->
+    <div v-if="showDeleteSupplierConfirm" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" @click.self="cancelDeleteSupplier">
+      <div class="bg-white rounded-apple p-8 w-[400px] max-w-[90vw]">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="p-3 bg-red-100 rounded-full">
+            <Trash2 class="w-6 h-6 text-apple-red" />
+          </div>
+          <h4 class="text-title-1">确认删除供应商</h4>
+        </div>
+        <p class="text-body mb-6">确定要删除此供应商吗？此操作不可恢复。</p>
+        <div class="flex items-center justify-end gap-3">
+          <button @click="cancelDeleteSupplier" class="px-6 py-2 text-body hover:bg-apple-bg rounded-apple-sm transition-colors">取消</button>
+          <button @click="confirmDeleteSupplier" class="px-6 py-2 bg-apple-red text-white rounded-apple-sm hover:bg-red-600 transition-colors">确认删除</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 删除报价确认弹窗 -->
+    <div v-if="showDeleteQuoteConfirm" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" @click.self="cancelDeleteQuote">
+      <div class="bg-white rounded-apple p-8 w-[400px] max-w-[90vw]">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="p-3 bg-red-100 rounded-full">
+            <Trash2 class="w-6 h-6 text-apple-red" />
+          </div>
+          <h4 class="text-title-1">确认删除报价项</h4>
+        </div>
+        <p class="text-body mb-6">确定要删除此报价项吗？此操作不可恢复。</p>
+        <div class="flex items-center justify-end gap-3">
+          <button @click="cancelDeleteQuote" class="px-6 py-2 text-body hover:bg-apple-bg rounded-apple-sm transition-colors">取消</button>
+          <button @click="confirmDeleteQuote" class="px-6 py-2 bg-apple-red text-white rounded-apple-sm hover:bg-red-600 transition-colors">确认删除</button>
         </div>
       </div>
     </div>
