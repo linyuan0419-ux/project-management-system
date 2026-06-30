@@ -49,7 +49,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   // 用户列表（模拟数据库）
   const users = ref<User[]>([
-    { id: 1, name: '开发者', username: 'dev', role: 'developer', department: '技术部' },
+    { id: 1, name: '林渊', username: 'linyuan', role: 'developer', department: '技术部' },
     { id: 2, name: '管理员', username: 'admin', role: 'manager', department: '管理部' },
     { id: 3, name: '张三', username: 'zhangsan', role: 'user', department: '项目部' },
     { id: 4, name: '李四', username: 'lisi', role: 'user', department: '创意部' },
@@ -62,13 +62,14 @@ export const useAuthStore = defineStore('auth', () => {
     return username.charAt(0).toUpperCase() + username.slice(1) + '123456'
   }
 
-  // 用户密码存储（初始密码符合规则）
-  const userPasswords = ref<UserPassword[]>(
-    users.value.map(u => ({ 
+  // 用户密码存储（初始密码符合规则，开发者自定义密码）
+  const userPasswords = ref<UserPassword[]>([
+    { username: 'linyuan', password: 'Linyuan0104' }, // 开发者自定义密码
+    ...users.value.filter(u => u.username !== 'linyuan').map(u => ({ 
       username: u.username, 
       password: generateInitialPassword(u.username) 
     }))
-  )
+  ])
 
   // 从localStorage读取密码
   const savedPasswords = localStorage.getItem('userPasswords')
