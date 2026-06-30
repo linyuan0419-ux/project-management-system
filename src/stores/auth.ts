@@ -43,9 +43,17 @@ export const useAuthStore = defineStore('auth', () => {
     { id: 5, name: '赵六', username: 'zhaoliu', role: 'user', department: '财务部' },
   ])
 
-  // 用户密码存储（初始密码与用户名相同）
+  // 生成符合规则的初始密码：首字母大写 + 123456
+  const generateInitialPassword = (username: string): string => {
+    return username.charAt(0).toUpperCase() + username.slice(1) + '123456'
+  }
+
+  // 用户密码存储（初始密码符合规则）
   const userPasswords = ref<UserPassword[]>(
-    users.value.map(u => ({ username: u.username, password: u.username }))
+    users.value.map(u => ({ 
+      username: u.username, 
+      password: generateInitialPassword(u.username) 
+    }))
   )
 
   // 从localStorage读取密码
@@ -147,8 +155,8 @@ export const useAuthStore = defineStore('auth', () => {
     
     const passIndex = userPasswords.value.findIndex(p => p.username === user.username)
     if (passIndex !== -1) {
-      // 重置为与用户名相同
-      userPasswords.value[passIndex].password = user.username
+      // 重置为符合规则的初始密码
+      userPasswords.value[passIndex].password = generateInitialPassword(user.username)
       return true
     }
     return false
@@ -166,10 +174,10 @@ export const useAuthStore = defineStore('auth', () => {
     const newUser = { ...user, id: newId }
     users.value.push(newUser)
     
-    // 设置初始密码与用户名相同
+    // 设置符合规则的初始密码
     userPasswords.value.push({
       username: user.username,
-      password: user.username
+      password: generateInitialPassword(user.username)
     })
     
     return true

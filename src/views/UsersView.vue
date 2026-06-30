@@ -212,7 +212,7 @@ const getRoleText = (role: string) => {
           <div>
             <label class="text-caption block mb-2">用户名 <span class="text-apple-red">*</span></label>
             <input v-model="userForm.username" type="text" class="w-full px-4 py-2 border border-apple-gray-100 rounded-apple-sm focus:outline-none focus:border-apple-blue" placeholder="输入用户名" :disabled="isEditing">
-            <p class="text-caption mt-1" v-if="!isEditing">初始密码与用户名相同</p>
+            <p class="text-caption mt-1" v-if="!isEditing">初始密码：用户名首字母大写 + 123456（如 Admin123456）</p>
           </div>
           <div>
             <label class="text-caption block mb-2">部门</label>

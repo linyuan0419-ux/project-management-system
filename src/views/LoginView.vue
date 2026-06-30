@@ -30,9 +30,10 @@ const handleLogin = async () => {
 }
 
 // 快速登录按钮（演示用）
+// 初始密码规则：首字母大写 + 123456
 const quickLogin = (user: string) => {
   username.value = user
-  password.value = user
+  password.value = user.charAt(0).toUpperCase() + user.slice(1) + '123456'
   handleLogin()
 }
 </script>
@@ -107,7 +108,7 @@ const quickLogin = (user: string) => {
               {{ user.name }} ({{ user.role === 'admin' ? '管理员' : '用户' }})
             </button>
           </div>
-          <p class="text-caption mt-2 text-xs">密码与用户名相同</p>
+          <p class="text-caption mt-2 text-xs">初始密码：首字母大写 + 123456（如 Admin123456）</p>
         </div>
       </div>
 

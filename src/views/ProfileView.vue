@@ -60,6 +60,23 @@ const openPasswordModal = () => {
   showPasswordModal.value = true
 }
 
+// 密码强度验证
+const validatePassword = (password: string): { valid: boolean; message: string } => {
+  if (password.length < 6) {
+    return { valid: false, message: '密码至少6位' }
+  }
+  if (!/[A-Z]/.test(password)) {
+    return { valid: false, message: '密码必须包含大写字母' }
+  }
+  if (!/[a-z]/.test(password)) {
+    return { valid: false, message: '密码必须包含小写字母' }
+  }
+  if (!/[0-9]/.test(password)) {
+    return { valid: false, message: '密码必须包含数字' }
+  }
+  return { valid: true, message: '' }
+}
+
 const savePassword = () => {
   passwordError.value = ''
   passwordSuccess.value = ''
@@ -74,8 +91,10 @@ const savePassword = () => {
     return
   }
   
-  if (passwordForm.value.newPassword.length < 4) {
-    passwordError.value = '新密码至少4位'
+  // 验证密码强度
+  const validation = validatePassword(passwordForm.value.newPassword)
+  if (!validation.valid) {
+    passwordError.value = validation.message
     return
   }
   
@@ -226,6 +245,7 @@ const departments = ['管理部', '项目部', '创意部', '财务部', '技术
         <div>
           <h4 class="text-body font-medium mb-1">安全提示</h4>
           <ul class="text-caption space-y-1">
+            <li>• 密码需包含：大写字母、小写字母、数字，至少6位</li>
             <li>• 建议定期更换密码，避免使用简单密码</li>
             <li>• 用户名修改后需要使用新用户名登录</li>
             <li>• 密码修改后需要重新登录</li>
@@ -280,7 +300,8 @@ const departments = ['管理部', '项目部', '创意部', '财务部', '技术
           </div>
           <div>
             <label class="text-caption block mb-2">新密码 <span class="text-apple-red">*</span></label>
-            <input v-model="passwordForm.newPassword" type="password" class="w-full px-4 py-2 border border-apple-gray-100 rounded-apple-sm focus:outline-none focus:border-apple-blue" placeholder="输入新密码（至少4位）" />
+            <input v-model="passwordForm.newPassword" type="password" class="w-full px-4 py-2 border border-apple-gray-100 rounded-apple-sm focus:outline-none focus:border-apple-blue" placeholder="输入新密码（至少6位，含大小写字母和数字）" />
+            <p class="text-caption mt-1 text-apple-gray-400">密码需包含：大写字母、小写字母、数字，至少6位</p>
           </div>
           <div>
             <label class="text-caption block mb-2">确认新密码 <span class="text-apple-red">*</span></label>
