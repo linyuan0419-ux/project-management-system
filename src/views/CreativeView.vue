@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { Palette, Box, Lightbulb, Calendar, CheckSquare, User, Search, Plus } from '@lucide/vue'
+import { Palette, Box, Lightbulb, Calendar, CheckSquare, User, Search, Plus, Edit2, Trash2, X, Check, BarChart3 } from '@lucide/vue'
+import SimpleGantt from '../components/SimpleGantt.vue'
 
 // 创意工作类型
 const creativeTypes = [
@@ -79,7 +80,21 @@ const schedules = ref([
 const activeType = ref('all')
 const selectedDesigner = ref('all')
 const searchQuery = ref('')
-const viewMode = ref<'calendar' | 'list'>('list')
+const viewMode = ref<'list' | 'calendar' | 'gantt'>('list')
+
+// 编辑状态
+const editingId = ref<number | null>(null)
+const editForm = ref({
+  projectName: '',
+  type: 'graphic',
+  task: '',
+  designer: '',
+  startDate: '',
+  endDate: '',
+  status: '未开始',
+  progress: 0,
+  content: '',
+})
 
 // 筛选后的工作列表
 const filteredSchedules = computed(() => {
@@ -108,6 +123,19 @@ const filteredSchedules = computed(() => {
   return result
 })
 
+// 甘特图任务数据
+const ganttTasks = computed(() => {
+  return filteredSchedules.value.map(s => ({
+    id: String(s.id),
+    name: `${s.designer} - ${s.task}`,
+    start: s.startDate,
+    end: s.endDate,
+    progress: s.progress,
+    status: s.status === '已完成' ? 'completed' : s.status === '进行中' ? 'in-progress' : 'pending',
+    custom_class: s.type,
+  }))
+})
+
 // 获取设计师工作量统计
 const getDesignerStats = (designer: string) => {
   const works = schedules.value.filter(s => s.designer === designer)
@@ -115,6 +143,48 @@ const getDesignerStats = (designer: string) => {
     total: works.length,
     completed: works.filter(s => s.status === '已完成').length,
     inProgress: works.filter(s => s.status === '进行中').length,
+  }
+}
+
+// 开始编辑
+const startEdit = (schedule: any) => {
+  editingId.value = schedule.id
+  editForm.value = { ...schedule }
+}
+
+// 保存编辑
+const saveEdit = () => {
+  const index = schedules.value.findIndex(s => s.id === editingId.value)
+  if (index !== -1) {
+    schedules.value[index] = { ...editForm.value, id: editingId.value }
+  }
+  editingId.value = null
+}
+
+// 取消编辑
+const cancelEdit = () => {
+  editingId.value = null
+}
+
+// 删除排期
+const deleteSchedule = (id: number) => {
+  if (confirm('确定要删除此排期吗？')) {
+    schedules.value = schedules.value.filter(s => s.id !== id)
+  }
+}
+
+// 更新进度
+const updateProgress = (id: number, progress: number) => {
+  const schedule = schedules.value.find(s => s.id === id)
+  if (schedule) {
+    schedule.progress = progress
+    if (progress === 100) {
+      schedule.status = '已完成'
+    } else if (progress > 0) {
+      schedule.status = '进行中'
+    } else {
+      schedule.status = '未开始'
+    }
   }
 }
 
@@ -130,6 +200,26 @@ const newWork = ref({
   content: '',
 })
 
+const createWork = () => {
+  const newId = Math.max(...schedules.value.map(s => s.id)) + 1
+  schedules.value.push({
+    id: newId,
+    ...newWork.value,
+    status: '未开始',
+    progress: 0,
+  })
+  showNewWorkModal.value = false
+  newWork.value = {
+    projectName: '',
+    type: 'graphic',
+    task: '',
+    designer: '',
+    startDate: '',
+    endDate: '',
+    content: '',
+  }
+}
+
 // 添加设计师
 const showAddDesignerModal = ref(false)
 const newDesignerName = ref('')
@@ -142,9 +232,38 @@ const addDesigner = () => {
   }
 }
 
+// 删除设计师
+const deleteDesigner = (designer: string) => {
+  if (confirm(`确定要删除设计师 "${designer}" 吗？\n注意：该设计师的所有排期将被保留，但无法再新建排期给此设计师。`)) {
+    designers.value = designers.value.filter(d => d !== designer)
+  }
+}
+
 // 获取本周日期
 const weekDays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
 const currentWeek = ref('2024年3月18日 - 3月24日')
+
+// 获取日期范围内的所有日期
+const getDatesInRange = (startDate: string, endDate: string): string[] => {
+  const dates: string[] = []
+  const start = new Date(startDate)
+  const end = new Date(endDate)
+  const current = new Date(start)
+  
+  while (current <= end) {
+    dates.push(current.toISOString().split('T')[0])
+    current.setDate(current.getDate() + 1)
+  }
+  
+  return dates
+}
+
+// 检查排期是否在某天
+const isScheduleOnDay = (schedule: any, dayIndex: number): boolean => {
+  // 简化处理：假设 weekDays 对应某一周的7天
+  // 实际应该根据具体日期计算
+  return true // 简化显示
+}
 </script>
 
 <template>
@@ -197,11 +316,20 @@ const currentWeek = ref('2024年3月18日 - 3月24日')
             <button
               v-for="designer in designers" :key="designer"
               @click="selectedDesigner = selectedDesigner === designer ? 'all' : designer"
-              class="px-4 py-2 rounded-apple-sm text-body transition-all flex items-center gap-2"
+              class="px-4 py-2 rounded-apple-sm text-body transition-all flex items-center gap-2 group"
               :class="selectedDesigner === designer ? 'bg-apple-blue text-white' : 'bg-apple-bg hover:bg-apple-gray-100'"
             >
               {{ designer }}
               <span class="text-xs opacity-70">({{ getDesignerStats(designer).total }})</span>
+              <!-- 删除设计师按钮 -->
+              <button
+                v-if="selectedDesigner !== designer"
+                @click.stop="deleteDesigner(designer)"
+                class="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 rounded transition-all"
+                title="删除设计师"
+              >
+                <Trash2 class="w-3 h-3 text-apple-red" />
+              </button>
             </button>
             <button @click="showAddDesignerModal = true" class="p-2 rounded-apple-sm bg-apple-bg hover:bg-apple-gray-100 transition-colors">
               <Plus class="w-4 h-4" />
@@ -239,6 +367,14 @@ const currentWeek = ref('2024年3月18日 - 3月24日')
         >
           日历视图
         </button>
+        <button
+          @click="viewMode = 'gantt'"
+          class="px-4 py-2 rounded-apple-sm text-body transition-all flex items-center gap-2"
+          :class="viewMode === 'gantt' ? 'bg-apple-blue text-white' : 'text-apple-gray-400 hover:text-apple-gray-900'"
+        >
+          <BarChart3 class="w-4 h-4" />
+          甘特图
+        </button>
       </div>
       <button @click="showNewWorkModal = true" class="btn-primary flex items-center gap-2">
         <Plus class="w-4 h-4" />
@@ -258,45 +394,110 @@ const currentWeek = ref('2024年3月18日 - 3月24日')
             <th class="text-left p-4 text-caption font-medium">时间周期</th>
             <th class="text-left p-4 text-caption font-medium">进度</th>
             <th class="text-left p-4 text-caption font-medium">状态</th>
+            <th class="text-left p-4 text-caption font-medium w-24">操作</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="schedule in filteredSchedules" :key="schedule.id" class="border-t border-apple-gray-100 hover:bg-apple-bg/50 cursor-pointer transition-colors">
-            <td class="p-4">
-              <p class="text-body font-medium">{{ schedule.projectName }}</p>
-            </td>
-            <td class="p-4">
-              <span class="tag" :style="{ 
-                backgroundColor: creativeTypes.find(t => t.id === schedule.type)?.color + '20',
-                color: creativeTypes.find(t => t.id === schedule.type)?.color
-              }">
-                {{ creativeTypes.find(t => t.id === schedule.type)?.name }}
-              </span>
-            </td>
-            <td class="p-4">
-              <p class="text-body font-medium">{{ schedule.task }}</p>
-              <p class="text-caption">{{ schedule.content }}</p>
-            </td>
-            <td class="p-4">
-              <span class="px-3 py-1 bg-apple-bg rounded-full text-body text-sm">{{ schedule.designer }}</span>
-            </td>
-            <td class="p-4">
-              <p class="text-body">{{ schedule.startDate }} ~</p>
-              <p class="text-body">{{ schedule.endDate }}</p>
-            </td>
-            <td class="p-4">
-              <div class="w-24 progress-bar">
-                <div class="fill" :style="{ width: schedule.progress + '%' }"></div>
-              </div>
-              <span class="text-caption">{{ schedule.progress }}%</span>
-            </td>
-            <td class="p-4">
-              <span class="tag" :class="{
-                'tag-green': schedule.status === '已完成',
-                'tag-blue': schedule.status === '进行中',
-                'tag-gray': schedule.status === '未开始',
-              }">{{ schedule.status }}</span>
-            </td>
+          <tr v-for="schedule in filteredSchedules" :key="schedule.id" class="border-t border-apple-gray-100 hover:bg-apple-bg/50 transition-colors">
+            <!-- 编辑模式 -->
+            <template v-if="editingId === schedule.id">
+              <td class="p-4">
+                <input v-model="editForm.projectName" type="text" class="w-full px-2 py-1 border border-apple-gray-100 rounded text-sm" />
+              </td>
+              <td class="p-4">
+                <select v-model="editForm.type" class="px-2 py-1 border border-apple-gray-100 rounded text-sm">
+                  <option v-for="type in creativeTypes" :key="type.id" :value="type.id">{{ type.name }}</option>
+                </select>
+              </td>
+              <td class="p-4">
+                <input v-model="editForm.task" type="text" class="w-full px-2 py-1 border border-apple-gray-100 rounded text-sm mb-1" />
+                <input v-model="editForm.content" type="text" class="w-full px-2 py-1 border border-apple-gray-100 rounded text-sm text-apple-gray-400" />
+              </td>
+              <td class="p-4">
+                <select v-model="editForm.designer" class="px-2 py-1 border border-apple-gray-100 rounded text-sm">
+                  <option v-for="d in designers" :key="d" :value="d">{{ d }}</option>
+                </select>
+              </td>
+              <td class="p-4">
+                <input v-model="editForm.startDate" type="date" class="px-2 py-1 border border-apple-gray-100 rounded text-sm mb-1" />
+                <input v-model="editForm.endDate" type="date" class="px-2 py-1 border border-apple-gray-100 rounded text-sm" />
+              </td>
+              <td class="p-4">
+                <input 
+                  v-model.number="editForm.progress" 
+                  type="range" 
+                  min="0" 
+                  max="100" 
+                  class="w-20 mb-1"
+                />
+                <span class="text-caption">{{ editForm.progress }}%</span>
+              </td>
+              <td class="p-4">
+                <select v-model="editForm.status" class="px-2 py-1 border border-apple-gray-100 rounded text-sm">
+                  <option value="未开始">未开始</option>
+                  <option value="进行中">进行中</option>
+                  <option value="已完成">已完成</option>
+                </select>
+              </td>
+              <td class="p-4">
+                <div class="flex items-center gap-1">
+                  <button @click="saveEdit" class="p-1.5 text-apple-green hover:bg-green-50 rounded">
+                    <Check class="w-4 h-4" />
+                  </button>
+                  <button @click="cancelEdit" class="p-1.5 text-apple-gray-400 hover:bg-apple-bg rounded">
+                    <X class="w-4 h-4" />
+                  </button>
+                </div>
+              </td>
+            </template>
+            <!-- 显示模式 -->
+            <template v-else>
+              <td class="p-4">
+                <p class="text-body font-medium">{{ schedule.projectName }}</p>
+              </td>
+              <td class="p-4">
+                <span class="tag" :style="{ 
+                  backgroundColor: creativeTypes.find(t => t.id === schedule.type)?.color + '20',
+                  color: creativeTypes.find(t => t.id === schedule.type)?.color
+                }">
+                  {{ creativeTypes.find(t => t.id === schedule.type)?.name }}
+                </span>
+              </td>
+              <td class="p-4">
+                <p class="text-body font-medium">{{ schedule.task }}</p>
+                <p class="text-caption">{{ schedule.content }}</p>
+              </td>
+              <td class="p-4">
+                <span class="px-3 py-1 bg-apple-bg rounded-full text-body text-sm">{{ schedule.designer }}</span>
+              </td>
+              <td class="p-4">
+                <p class="text-body">{{ schedule.startDate }} ~</p>
+                <p class="text-body">{{ schedule.endDate }}</p>
+              </td>
+              <td class="p-4">
+                <div class="w-24 progress-bar">
+                  <div class="fill" :style="{ width: schedule.progress + '%' }"></div>
+                </div>
+                <span class="text-caption">{{ schedule.progress }}%</span>
+              </td>
+              <td class="p-4">
+                <span class="tag" :class="{
+                  'tag-green': schedule.status === '已完成',
+                  'tag-blue': schedule.status === '进行中',
+                  'tag-gray': schedule.status === '未开始',
+                }">{{ schedule.status }}</span>
+              </td>
+              <td class="p-4">
+                <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button @click="startEdit(schedule)" class="p-1.5 text-apple-gray-400 hover:text-apple-blue rounded">
+                    <Edit2 class="w-4 h-4" />
+                  </button>
+                  <button @click="deleteSchedule(schedule.id)" class="p-1.5 text-apple-gray-400 hover:text-apple-red rounded">
+                    <Trash2 class="w-4 h-4" />
+                  </button>
+                </div>
+              </td>
+            </template>
           </tr>
         </tbody>
       </table>
@@ -306,7 +507,7 @@ const currentWeek = ref('2024年3月18日 - 3月24日')
     </div>
 
     <!-- 日历视图 -->
-    <div v-else class="card">
+    <div v-else-if="viewMode === 'calendar'" class="card">
       <div class="flex items-center justify-between mb-6">
         <h4 class="text-title-2">{{ currentWeek }}</h4>
         <div class="flex items-center gap-2">
@@ -323,12 +524,39 @@ const currentWeek = ref('2024年3月18日 - 3月24日')
                  :style="{ 
                    backgroundColor: creativeTypes.find(t => t.id === schedule.type)?.color + '20',
                    color: creativeTypes.find(t => t.id === schedule.type)?.color
-                 }">
-              {{ schedule.task }}
+                 }"
+                 @click="startEdit(schedule)">
+              {{ schedule.designer }} - {{ schedule.task }}
             </div>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- 甘特图视图 -->
+    <div v-else-if="viewMode === 'gantt'" class="card">
+      <div class="flex items-center justify-between mb-6">
+        <h4 class="text-title-2">设计师排期甘特图</h4>
+        <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2 text-sm">
+            <span class="w-3 h-3 rounded-full bg-green-500"></span>
+            <span class="text-caption">已完成</span>
+          </div>
+          <div class="flex items-center gap-2 text-sm">
+            <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+            <span class="text-caption">进行中</span>
+          </div>
+          <div class="flex items-center gap-2 text-sm">
+            <span class="w-3 h-3 rounded-full bg-orange-400"></span>
+            <span class="text-caption">未开始</span>
+          </div>
+        </div>
+      </div>
+      <SimpleGantt 
+        :tasks="ganttTasks"
+        view-mode="week"
+        @task-click="(task) => startEdit(filteredSchedules.find(s => s.id === Number(task.id)))"
+      />
     </div>
 
     <!-- 新建工作弹窗 -->
@@ -376,7 +604,7 @@ const currentWeek = ref('2024年3月18日 - 3月24日')
         </div>
         <div class="flex items-center justify-end gap-3 mt-8">
           <button @click="showNewWorkModal = false" class="px-6 py-2 text-body hover:bg-apple-bg rounded-apple-sm transition-colors">取消</button>
-          <button @click="showNewWorkModal = false" class="btn-primary">创建</button>
+          <button @click="createWork" class="btn-primary" :disabled="!newWork.projectName || !newWork.task || !newWork.designer">创建</button>
         </div>
       </div>
     </div>
