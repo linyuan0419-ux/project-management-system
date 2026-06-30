@@ -94,7 +94,7 @@ const handleLogin = async () => {
 
       <!-- 版权信息 -->
       <p class="text-center text-caption mt-8">
-        © 2024 项目管理系统 · 仅供内部使用
+        © 2024 项目管理系统 v1.0.0 · 仅供内部使用
       </p>
     </div>
   </div>

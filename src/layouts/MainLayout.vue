@@ -142,6 +142,7 @@ const createProject = () => {
           <LogOut class="w-5 h-5" />
           <span class="text-body">退出登录</span>
         </button>
+        <p class="text-caption text-apple-gray-400 mt-4 text-center">项目管理系统 v1.0.0</p>
       </div>
     </aside>
 
