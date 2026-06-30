@@ -71,6 +71,26 @@ const createProject = () => {
   }
   router.push('/projects')
 }
+
+// 新建客户弹窗
+const showNewClientModal = ref(false)
+const newClient = ref({
+  name: '',
+  industry: '',
+  contact: '',
+  phone: '',
+})
+
+const createClient = () => {
+  console.log('创建客户:', newClient.value)
+  showNewClientModal.value = false
+  newClient.value = {
+    name: '',
+    industry: '',
+    contact: '',
+    phone: '',
+  }
+}
 </script>
 
 <template>
@@ -153,7 +173,20 @@ const createProject = () => {
         <div class="flex items-center justify-between">
           <h2 class="text-title-2">{{ route.meta.title || '工作台' }}</h2>
           <div class="flex items-center gap-4">
-            <button @click="showNewProjectModal = true" class="btn-primary flex items-center gap-2">
+            <!-- 根据页面显示不同的新建按钮 -->
+            <button 
+              v-if="route.path === '/clients'" 
+              @click="showNewClientModal = true" 
+              class="btn-primary flex items-center gap-2"
+            >
+              <span class="text-lg">+</span>
+              <span>新建客户</span>
+            </button>
+            <button 
+              v-else-if="route.path !== '/creative'" 
+              @click="showNewProjectModal = true" 
+              class="btn-primary flex items-center gap-2"
+            >
               <span class="text-lg">+</span>
               <span>新建项目</span>
             </button>
@@ -250,6 +283,59 @@ const createProject = () => {
         <div class="flex items-center justify-end gap-3 mt-8 pt-6 border-t border-apple-gray-100">
           <button @click="showNewProjectModal = false" class="px-6 py-2 text-body hover:bg-apple-bg rounded-apple-sm transition-colors">取消</button>
           <button @click="createProject" class="btn-primary" :disabled="!newProject.name || !newProject.client">创建</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 新建客户弹窗 -->
+    <div v-if="showNewClientModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" @click.self="showNewClientModal = false">
+      <div class="bg-white rounded-apple p-8 w-[480px] max-w-[90vw]">
+        <div class="flex items-center justify-between mb-6">
+          <h4 class="text-title-1">新建客户</h4>
+          <button @click="showNewClientModal = false" class="p-2 hover:bg-apple-bg rounded-apple-sm transition-colors">
+            <X class="w-5 h-5 text-apple-gray-400" />
+          </button>
+        </div>
+        
+        <div class="space-y-5">
+          <!-- 客户名称 -->
+          <div>
+            <label class="text-caption block mb-2">客户名称 <span class="text-apple-red">*</span></label>
+            <input v-model="newClient.name" type="text" class="w-full px-4 py-2 border border-apple-gray-100 rounded-apple-sm focus:outline-none focus:border-apple-blue" placeholder="输入客户公司名称">
+          </div>
+
+          <!-- 所属行业 -->
+          <div>
+            <label class="text-caption block mb-2">所属行业</label>
+            <select v-model="newClient.industry" class="w-full px-4 py-2 border border-apple-gray-100 rounded-apple-sm focus:outline-none focus:border-apple-blue">
+              <option value="">请选择行业</option>
+              <option value="科技/互联网">科技/互联网</option>
+              <option value="汽车">汽车</option>
+              <option value="房地产">房地产</option>
+              <option value="时尚/零售">时尚/零售</option>
+              <option value="金融">金融</option>
+              <option value="医疗">医疗</option>
+              <option value="教育">教育</option>
+              <option value="其他">其他</option>
+            </select>
+          </div>
+
+          <!-- 联系人 -->
+          <div>
+            <label class="text-caption block mb-2">联系人</label>
+            <input v-model="newClient.contact" type="text" class="w-full px-4 py-2 border border-apple-gray-100 rounded-apple-sm focus:outline-none focus:border-apple-blue" placeholder="输入联系人姓名">
+          </div>
+
+          <!-- 联系电话 -->
+          <div>
+            <label class="text-caption block mb-2">联系电话</label>
+            <input v-model="newClient.phone" type="tel" class="w-full px-4 py-2 border border-apple-gray-100 rounded-apple-sm focus:outline-none focus:border-apple-blue" placeholder="输入联系电话">
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 mt-8 pt-6 border-t border-apple-gray-100">
+          <button @click="showNewClientModal = false" class="px-6 py-2 text-body hover:bg-apple-bg rounded-apple-sm transition-colors">取消</button>
+          <button @click="createClient" class="btn-primary" :disabled="!newClient.name">创建</button>
         </div>
       </div>
     </div>
