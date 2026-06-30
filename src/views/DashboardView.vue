@@ -273,7 +273,7 @@ const recentActivities = [
               <p class="text-caption">已完成</p>
             </div>
             <div class="text-center">
-              <p class="text-display text-2xl">{{ todayStats.total - todayStats.completed }}</p>
+              <p class="text-display text-2xl">{{ Math.max(0, todayStats.total - todayStats.completed) }}</p>
               <p class="text-caption">待完成</p>
             </div>
           </div>
