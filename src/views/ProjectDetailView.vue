@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, Calendar, CheckSquare, Users, DollarSign, FileText, Activity, Edit, Trash2, X, Check } from '@lucide/vue'
+import { ArrowLeft, Calendar, CheckSquare, Users, DollarSign, FileText, Activity, Edit, Trash2, X, Check, Palette } from '@lucide/vue'
 import SimpleGantt from '../components/SimpleGantt.vue'
 import { useAuthStore } from '../stores/auth'
 
@@ -17,6 +17,7 @@ const tabs = [
   { id: 'overview', name: '概览', icon: Activity },
   { id: 'gantt', name: '甘特图', icon: Calendar },
   { id: 'tasks', name: '任务', icon: CheckSquare },
+  { id: 'creative', name: '创意排期', icon: Palette },
   { id: 'suppliers', name: '供应商', icon: Users },
   { id: 'quotes', name: '报价', icon: DollarSign },
   { id: 'files', name: '文件', icon: FileText },
@@ -84,6 +85,19 @@ const totalSettlement = suppliers.value.reduce((sum, s) => sum + s.settlement, 0
 const totalPrepayment = suppliers.value.reduce((sum, s) => sum + s.prepayment, 0)
 const totalFinal = suppliers.value.reduce((sum, s) => sum + s.finalPayment, 0)
 const unpaidCount = suppliers.value.filter(s => s.status === '合作中').length
+
+// 创意排期数据（与创意部关联）
+const creativeSchedules = ref([
+  { id: 1, type: 'graphic', task: '主视觉设计', designer: '小王', startDate: '2024-03-20', endDate: '2024-03-25', status: '进行中', progress: 60, content: '发布会主KV、邀请函、背景板设计' },
+  { id: 2, type: '3d', task: '展台3D建模', designer: '小李', startDate: '2024-03-22', endDate: '2024-03-28', status: '未开始', progress: 0, content: '展台结构、材质、灯光效果设计' },
+])
+
+// 创意类型映射
+const creativeTypeMap: Record<string, { name: string, color: string }> = {
+  graphic: { name: '平面设计', color: '#007AFF' },
+  '3d': { name: '3D设计', color: '#5856D6' },
+  planning: { name: '策划', color: '#FF9500' },
+}
 
 // 项目动态
 const activities = [
@@ -517,6 +531,58 @@ const cancelDeleteQuote = () => {
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- 创意排期 Tab -->
+    <div v-else-if="activeTab === 'creative'" class="card overflow-hidden">
+      <div class="flex items-center justify-between p-4 border-b border-apple-gray-100">
+        <h4 class="text-title-2">创意排期</h4>
+        <router-link to="/creative" class="btn-primary">前往创意部管理</router-link>
+      </div>
+      <table class="w-full">
+        <thead class="bg-apple-bg">
+          <tr>
+            <th class="text-left p-4 text-caption font-medium">类型</th>
+            <th class="text-left p-4 text-caption font-medium">工作内容</th>
+            <th class="text-left p-4 text-caption font-medium">设计师</th>
+            <th class="text-left p-4 text-caption font-medium">时间周期</th>
+            <th class="text-left p-4 text-caption font-medium">进度</th>
+            <th class="text-left p-4 text-caption font-medium">状态</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="schedule in creativeSchedules" :key="schedule.id" class="border-t border-apple-gray-100 hover:bg-apple-bg/50 transition-colors">
+            <td class="p-4">
+              <span class="tag" :style="{ backgroundColor: creativeTypeMap[schedule.type]?.color + '20', color: creativeTypeMap[schedule.type]?.color }">
+                {{ creativeTypeMap[schedule.type]?.name }}
+              </span>
+            </td>
+            <td class="p-4">
+              <p class="text-body font-medium">{{ schedule.task }}</p>
+              <p class="text-caption text-apple-gray-400">{{ schedule.content }}</p>
+            </td>
+            <td class="p-4 text-body">{{ schedule.designer }}</td>
+            <td class="p-4 text-body">{{ schedule.startDate }} ~ {{ schedule.endDate }}</td>
+            <td class="p-4">
+              <div class="w-24 progress-bar">
+                <div class="fill" :style="{ width: schedule.progress + '%' }"></div>
+              </div>
+              <span class="text-caption">{{ schedule.progress }}%</span>
+            </td>
+            <td class="p-4">
+              <span class="tag" :class="{
+                'tag-green': schedule.status === '已完成',
+                'tag-blue': schedule.status === '进行中',
+                'tag-gray': schedule.status === '未开始'
+              }">{{ schedule.status }}</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div v-if="creativeSchedules.length === 0" class="p-8 text-center text-apple-gray-400">
+        <p>暂无创意排期</p>
+        <router-link to="/creative" class="text-apple-blue hover:underline mt-2 inline-block">前往创意部添加排期</router-link>
+      </div>
     </div>
 
     <!-- 供应商 Tab -->
