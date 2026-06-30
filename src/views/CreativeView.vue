@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { Palette, Box, Lightbulb, Calendar, CheckSquare, User, Search, Plus, Edit2, Trash2, X, Check, BarChart3 } from '@lucide/vue'
 import SimpleGantt from '../components/SimpleGantt.vue'
 import { useAuthStore } from '../stores/auth'
+import { getToday, getFutureDate, isOverdue, getRelativeTime } from '../utils/date'
 
 const authStore = useAuthStore()
 
@@ -221,10 +222,25 @@ const newWork = ref({
   type: 'graphic',
   task: '',
   designer: '',
-  startDate: '',
-  endDate: '',
+  startDate: getToday(),
+  endDate: getFutureDate(7),
   content: '',
 })
+
+// 打开新建弹窗时重置日期为今天
+const openNewWorkModal = () => {
+  newWork.value = {
+    projectName: '',
+    type: 'graphic',
+    task: '',
+    designer: '',
+    startDate: getToday(),
+    endDate: getFutureDate(7),
+    content: '',
+  }
+  projectSearchQuery.value = ''
+  showNewWorkModal.value = true
+}
 
 // 项目搜索
 const projectSearchQuery = ref('')
@@ -446,7 +462,7 @@ const isScheduleOnDay = (schedule: any, dayIndex: number): boolean => {
           甘特图
         </button>
       </div>
-      <button @click="showNewWorkModal = true" class="btn-primary flex items-center gap-2">
+      <button @click="openNewWorkModal" class="btn-primary flex items-center gap-2">
         <Plus class="w-4 h-4" />
         <span>新建排期</span>
       </button>
@@ -543,6 +559,10 @@ const isScheduleOnDay = (schedule: any, dayIndex: number): boolean => {
               <td class="p-4">
                 <p class="text-body">{{ schedule.startDate }} ~</p>
                 <p class="text-body">{{ schedule.endDate }}</p>
+                <p class="text-caption" :class="{ 'text-apple-red': isOverdue(schedule.endDate) && schedule.status !== '已完成' }">
+                  {{ getRelativeTime(schedule.endDate) }}
+                  <span v-if="isOverdue(schedule.endDate) && schedule.status !== '已完成'" class="text-apple-red">(已逾期)</span>
+                </p>
               </td>
               <td class="p-4">
                 <div class="w-24 progress-bar">

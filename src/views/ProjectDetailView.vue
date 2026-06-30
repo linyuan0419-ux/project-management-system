@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Calendar, CheckSquare, Users, DollarSign, FileText, Activity, Edit, Trash2, X, Check, Palette } from '@lucide/vue'
 import SimpleGantt from '../components/SimpleGantt.vue'
 import { useAuthStore } from '../stores/auth'
+import { getToday, getFutureDate, isOverdue, getRelativeTime } from '../utils/date'
 
 const authStore = useAuthStore()
 
@@ -562,7 +563,13 @@ const cancelDeleteQuote = () => {
               <p class="text-caption text-apple-gray-400">{{ schedule.content }}</p>
             </td>
             <td class="p-4 text-body">{{ schedule.designer }}</td>
-            <td class="p-4 text-body">{{ schedule.startDate }} ~ {{ schedule.endDate }}</td>
+            <td class="p-4">
+              <p class="text-body">{{ schedule.startDate }} ~ {{ schedule.endDate }}</p>
+              <p class="text-caption" :class="{ 'text-apple-red': isOverdue(schedule.endDate) && schedule.status !== '已完成' }">
+                {{ getRelativeTime(schedule.endDate) }}
+                <span v-if="isOverdue(schedule.endDate) && schedule.status !== '已完成'" class="text-apple-red">(已逾期)</span>
+              </p>
+            </td>
             <td class="p-4">
               <div class="w-24 progress-bar">
                 <div class="fill" :style="{ width: schedule.progress + '%' }"></div>
@@ -573,8 +580,9 @@ const cancelDeleteQuote = () => {
               <span class="tag" :class="{
                 'tag-green': schedule.status === '已完成',
                 'tag-blue': schedule.status === '进行中',
-                'tag-gray': schedule.status === '未开始'
-              }">{{ schedule.status }}</span>
+                'tag-gray': schedule.status === '未开始',
+                'tag-red': isOverdue(schedule.endDate) && schedule.status !== '已完成'
+              }">{{ isOverdue(schedule.endDate) && schedule.status !== '已完成' ? '已逾期' : schedule.status }}</span>
             </td>
           </tr>
         </tbody>

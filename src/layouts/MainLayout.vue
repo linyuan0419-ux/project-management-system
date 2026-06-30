@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { LayoutDashboard, Briefcase, Users as UsersIcon, Palette, FileText, Settings, Shield, LogOut, User, X } from '@lucide/vue'
+import { getToday, getFutureDate } from '../utils/date'
 
 const route = useRoute()
 const router = useRouter()
@@ -42,10 +43,26 @@ const newProject = ref({
   type: 'direct',
   stage: 'idea',
   budget: 0,
-  startDate: '',
-  endDate: '',
+  startDate: getToday(),
+  endDate: getFutureDate(30),
   description: '',
 })
+
+// 打开新建项目弹窗时重置日期
+const openNewProjectModal = () => {
+  newProject.value = {
+    name: '',
+    client: '',
+    clientContact: '',
+    type: 'direct',
+    stage: 'idea',
+    budget: 0,
+    startDate: getToday(),
+    endDate: getFutureDate(30),
+    description: '',
+  }
+  showNewProjectModal.value = true
+}
 
 const projectStages = [
   { id: 'pitch', name: '打标' },
@@ -58,17 +75,7 @@ const projectStages = [
 const createProject = () => {
   console.log('创建项目:', newProject.value)
   showNewProjectModal.value = false
-  newProject.value = {
-    name: '',
-    client: '',
-    clientContact: '',
-    type: 'direct',
-    stage: 'idea',
-    budget: 0,
-    startDate: '',
-    endDate: '',
-    description: '',
-  }
+  // 创建成功后不重置，因为弹窗关闭时已经处理
   router.push('/projects')
 }
 
@@ -184,7 +191,7 @@ const createClient = () => {
             </button>
             <button 
               v-else-if="route.path !== '/creative'" 
-              @click="showNewProjectModal = true" 
+              @click="openNewProjectModal" 
               class="btn-primary flex items-center gap-2"
             >
               <span class="text-lg">+</span>
