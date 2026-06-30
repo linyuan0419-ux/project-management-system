@@ -190,7 +190,7 @@ const createClient = () => {
               <span>新建客户</span>
             </button>
             <button 
-              v-else-if="route.path !== '/creative' && route.path !== '/users' && route.path !== '/reports'" 
+              v-else-if="route.path === '/projects'" 
               @click="openNewProjectModal" 
               class="btn-primary flex items-center gap-2"
             >
