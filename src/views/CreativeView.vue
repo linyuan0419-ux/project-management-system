@@ -169,11 +169,26 @@ const cancelEdit = () => {
   editingId.value = null
 }
 
-// 删除排期
-const deleteSchedule = (id: number) => {
-  if (confirm('确定要删除此排期吗？')) {
-    schedules.value = schedules.value.filter(s => s.id !== id)
+// 删除排期确认弹窗
+const showDeleteScheduleConfirm = ref(false)
+const scheduleToDelete = ref<number | null>(null)
+
+const openDeleteScheduleConfirm = (id: number) => {
+  scheduleToDelete.value = id
+  showDeleteScheduleConfirm.value = true
+}
+
+const confirmDeleteSchedule = () => {
+  if (scheduleToDelete.value) {
+    schedules.value = schedules.value.filter(s => s.id !== scheduleToDelete.value)
+    showDeleteScheduleConfirm.value = false
+    scheduleToDelete.value = null
   }
+}
+
+const cancelDeleteSchedule = () => {
+  showDeleteScheduleConfirm.value = false
+  scheduleToDelete.value = null
 }
 
 // 更新进度
@@ -235,42 +250,42 @@ const addDesigner = () => {
   }
 }
 
-// 删除设计师（仅开发者）
-const deleteDesigner = (designer: string) => {
+// 删除设计师确认弹窗
+const showDeleteDesignerConfirm = ref(false)
+const designerToDelete = ref<string>('')
+const designerWorksCount = ref(0)
+
+const openDeleteDesignerConfirm = (designer: string) => {
   // 检查权限
   if (!authStore.isDeveloper) {
     alert('只有开发者可以删除设计师')
     return
   }
   
-  const designerWorks = schedules.value.filter(s => s.designer === designer)
-  
-  if (confirm(`确定要删除设计师 "${designer}" 吗？\n\n该设计师有 ${designerWorks.length} 个排期，删除后将同步清除这些排期。\n\n此操作不可恢复！`)) {
-    forceDeleteDesigner(designer)
-  }
+  designerToDelete.value = designer
+  designerWorksCount.value = schedules.value.filter(s => s.designer === designer).length
+  showDeleteDesignerConfirm.value = true
 }
 
-// 强制删除设计师（无确认，用于演示）
-const forceDeleteDesigner = (designer: string) => {
-  // 检查权限
-  if (!authStore.isDeveloper) {
-    console.log('只有开发者可以删除设计师')
-    return
-  }
-  
-  const designerWorks = schedules.value.filter(s => s.designer === designer)
-  
+const confirmDeleteDesigner = () => {
   // 删除该设计师的所有排期
-  schedules.value = schedules.value.filter(s => s.designer !== designer)
+  schedules.value = schedules.value.filter(s => s.designer !== designerToDelete.value)
   // 删除设计师
-  designers.value = designers.value.filter(d => d !== designer)
+  designers.value = designers.value.filter(d => d !== designerToDelete.value)
   // 如果当前筛选的是该设计师，重置筛选
-  if (selectedDesigner.value === designer) {
+  if (selectedDesigner.value === designerToDelete.value) {
     selectedDesigner.value = 'all'
   }
   
-  // 显示删除成功提示
-  console.log(`已删除设计师 "${designer}" 及其 ${designerWorks.length} 个排期`)
+  showDeleteDesignerConfirm.value = false
+  designerToDelete.value = ''
+  designerWorksCount.value = 0
+}
+
+const cancelDeleteDesigner = () => {
+  showDeleteDesignerConfirm.value = false
+  designerToDelete.value = ''
+  designerWorksCount.value = 0
 }
 
 // 获取本周日期
@@ -358,7 +373,7 @@ const isScheduleOnDay = (schedule: any, dayIndex: number): boolean => {
               <!-- 删除设计师按钮（仅开发者可见） -->
               <button
                 v-if="authStore.isDeveloper && selectedDesigner !== designer"
-                @click.stop="deleteDesigner(designer)"
+                @click.stop="openDeleteDesignerConfirm(designer)"
                 class="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 rounded transition-all"
                 title="删除设计师"
               >
@@ -368,14 +383,7 @@ const isScheduleOnDay = (schedule: any, dayIndex: number): boolean => {
             <button @click="showAddDesignerModal = true" class="p-2 rounded-apple-sm bg-apple-bg hover:bg-apple-gray-100 transition-colors" title="添加设计师">
               <Plus class="w-4 h-4" />
             </button>
-            <!-- 开发者测试：一键删除小陈（演示用，小陈有0个排期） -->
-            <button 
-              v-if="authStore.isDeveloper && designers.includes('小陈')" 
-              @click="forceDeleteDesigner('小陈')"
-              class="px-3 py-2 rounded-apple-sm bg-red-50 text-apple-red text-sm hover:bg-red-100 transition-colors"
-            >
-              测试：删除小陈
-            </button>
+
           </div>
         </div>
         <div class="flex items-center gap-4">
@@ -537,7 +545,7 @@ const isScheduleOnDay = (schedule: any, dayIndex: number): boolean => {
                   <!-- 仅开发者可删除排期 -->
                   <button 
                     v-if="authStore.isDeveloper"
-                    @click="deleteSchedule(schedule.id)" 
+                    @click="openDeleteScheduleConfirm(schedule.id)" 
                     class="p-1.5 text-apple-gray-400 hover:text-apple-red hover:bg-red-50 rounded transition-colors" 
                     title="删除"
                   >
@@ -668,6 +676,47 @@ const isScheduleOnDay = (schedule: any, dayIndex: number): boolean => {
         <div class="flex items-center justify-end gap-3 mt-8">
           <button @click="showAddDesignerModal = false" class="px-6 py-2 text-body hover:bg-apple-bg rounded-apple-sm transition-colors">取消</button>
           <button @click="addDesigner" class="btn-primary" :disabled="!newDesignerName.trim()">添加</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 删除排期确认弹窗 -->
+    <div v-if="showDeleteScheduleConfirm" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" @click.self="cancelDeleteSchedule">
+      <div class="bg-white rounded-apple p-8 w-[400px] max-w-[90vw]">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="p-3 bg-red-100 rounded-full">
+            <Trash2 class="w-6 h-6 text-apple-red" />
+          </div>
+          <h4 class="text-title-1">确认删除排期</h4>
+        </div>
+        <p class="text-body mb-6">确定要删除此排期吗？此操作不可恢复。</p>
+        <div class="flex items-center justify-end gap-3">
+          <button @click="cancelDeleteSchedule" class="px-6 py-2 text-body hover:bg-apple-bg rounded-apple-sm transition-colors">取消</button>
+          <button @click="confirmDeleteSchedule" class="px-6 py-2 bg-apple-red text-white rounded-apple-sm hover:bg-red-600 transition-colors">确认删除</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 删除设计师确认弹窗 -->
+    <div v-if="showDeleteDesignerConfirm" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" @click.self="cancelDeleteDesigner">
+      <div class="bg-white rounded-apple p-8 w-[480px] max-w-[90vw]">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="p-3 bg-red-100 rounded-full">
+            <Trash2 class="w-6 h-6 text-apple-red" />
+          </div>
+          <h4 class="text-title-1">确认删除设计师</h4>
+        </div>
+        <div class="space-y-4 mb-6">
+          <p class="text-body">确定要删除设计师 <span class="font-medium">"{{ designerToDelete }}"</span> 吗？</p>
+          <div class="p-4 bg-apple-bg rounded-apple-sm">
+            <p class="text-caption mb-1">该设计师有 <span class="text-apple-red font-medium">{{ designerWorksCount }}</span> 个排期</p>
+            <p class="text-caption text-apple-gray-400">删除后将同步清除这些排期</p>
+          </div>
+          <p class="text-caption text-apple-red">此操作不可恢复！</p>
+        </div>
+        <div class="flex items-center justify-end gap-3">
+          <button @click="cancelDeleteDesigner" class="px-6 py-2 text-body hover:bg-apple-bg rounded-apple-sm transition-colors">取消</button>
+          <button @click="confirmDeleteDesigner" class="px-6 py-2 bg-apple-red text-white rounded-apple-sm hover:bg-red-600 transition-colors">确认删除</button>
         </div>
       </div>
     </div>
