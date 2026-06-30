@@ -44,13 +44,6 @@ watch(inventory, (newVal) => {
   autoSave('inventory', newVal, 'current')
 }, { deep: true })
 
-// 食物库存
-const inventory = ref({
-  food: 3,     // 猫粮
-  water: 3,    // 水
-  snack: 1,    // 零食
-})
-
 // 喂食
 const feedCat = (type: 'food' | 'water' | 'snack') => {
   if (inventory.value[type] <= 0) return
