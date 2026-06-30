@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { LayoutDashboard, Briefcase, Users as UsersIcon, Palette, FileText, Settings, Shield, LogOut, User } from '@lucide/vue'
+import { LayoutDashboard, Briefcase, Users as UsersIcon, Palette, FileText, Settings, Shield, LogOut, User, X } from '@lucide/vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -169,7 +169,12 @@ const createProject = () => {
     <!-- 新建项目弹窗 -->
     <div v-if="showNewProjectModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" @click.self="showNewProjectModal = false">
       <div class="bg-white rounded-apple p-8 w-[560px] max-w-[90vw] max-h-[90vh] overflow-y-auto">
-        <h4 class="text-title-1 mb-6">新建项目</h4>
+        <div class="flex items-center justify-between mb-6">
+          <h4 class="text-title-1">新建项目</h4>
+          <button @click="showNewProjectModal = false" class="p-2 hover:bg-apple-bg rounded-apple-sm transition-colors">
+            <X class="w-5 h-5 text-apple-gray-400" />
+          </button>
+        </div>
         
         <div class="space-y-5">
           <!-- 项目名称 -->
