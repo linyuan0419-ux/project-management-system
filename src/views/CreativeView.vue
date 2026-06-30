@@ -16,6 +16,14 @@ const creativeTypes = [
 // 设计师列表
 const designers = ref(['小王', '小李', '小张', '小陈', '小刘'])
 
+// 项目列表（从项目管理同步）
+const projects = ref([
+  { id: 1, name: '某品牌新品发布会', client: 'ABC科技', stage: 'production' },
+  { id: 2, name: '年度经销商大会', client: 'XYZ汽车', stage: 'onsite' },
+  { id: 3, name: '展厅设计提案', client: 'DEF地产', stage: 'pitch' },
+  { id: 4, name: '快闪店搭建', client: 'GHI时尚', stage: 'idea' },
+])
+
 // 工作排期数据
 const schedules = ref([
   {
@@ -218,6 +226,17 @@ const newWork = ref({
   content: '',
 })
 
+// 项目搜索
+const projectSearchQuery = ref('')
+const filteredProjects = computed(() => {
+  if (!projectSearchQuery.value) return projects.value
+  const query = projectSearchQuery.value.toLowerCase()
+  return projects.value.filter(p => 
+    p.name.toLowerCase().includes(query) || 
+    p.client.toLowerCase().includes(query)
+  )
+})
+
 const createWork = () => {
   const newId = Math.max(...schedules.value.map(s => s.id)) + 1
   schedules.value.push({
@@ -227,6 +246,7 @@ const createWork = () => {
     progress: 0,
   })
   showNewWorkModal.value = false
+  projectSearchQuery.value = '' // 清空搜索
   newWork.value = {
     projectName: '',
     type: 'graphic',
@@ -621,8 +641,22 @@ const isScheduleOnDay = (schedule: any, dayIndex: number): boolean => {
         <h4 class="text-title-1 mb-6">新建工作排期</h4>
         <div class="space-y-4">
           <div>
-            <label class="text-caption block mb-2">所属项目</label>
-            <input v-model="newWork.projectName" type="text" class="w-full px-4 py-2 border border-apple-gray-100 rounded-apple-sm focus:outline-none focus:border-apple-blue" placeholder="输入项目名称">
+            <label class="text-caption block mb-2">所属项目 <span class="text-apple-red">*</span></label>
+            <!-- 项目搜索 -->
+            <div class="relative mb-2">
+              <Search class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-apple-gray-400" />
+              <input 
+                v-model="projectSearchQuery" 
+                type="text" 
+                class="w-full pl-9 pr-4 py-2 border border-apple-gray-100 rounded-apple-sm focus:outline-none focus:border-apple-blue text-sm" 
+                placeholder="搜索项目名称..."
+              >
+            </div>
+            <!-- 项目下拉选择 -->
+            <select v-model="newWork.projectName" class="w-full px-4 py-2 border border-apple-gray-100 rounded-apple-sm focus:outline-none focus:border-apple-blue" size="5">
+              <option v-for="project in filteredProjects" :key="project.id" :value="project.name">{{ project.name }} ({{ project.client }})</option>
+            </select>
+            <p v-if="filteredProjects.length === 0" class="text-caption text-apple-gray-400 mt-2">未找到匹配的项目</p>
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div>
