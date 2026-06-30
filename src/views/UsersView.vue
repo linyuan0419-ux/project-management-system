@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { Users, Plus, Edit, Trash2, Shield, User, X, Check, Key } from '@lucide/vue'
 import type { UserRole } from '../stores/auth'
@@ -24,6 +24,18 @@ const roles: { value: UserRole; label: string }[] = [
   { value: 'manager', label: '管理员' },
   { value: 'user', label: '普通用户' },
 ]
+
+// 生成初始密码
+const generateInitialPassword = (username: string): string => {
+  if (!username) return ''
+  return username.charAt(0).toUpperCase() + username.slice(1) + '123456'
+}
+
+// 生成的密码
+const generatedPassword = computed(() => {
+  if (isEditing.value) return ''
+  return generateInitialPassword(userForm.value.username)
+})
 
 const openAddModal = () => {
   isEditing.value = false
@@ -238,7 +250,20 @@ const getRoleText = (role: UserRole) => {
           <div>
             <label class="text-caption block mb-2">用户名 <span class="text-apple-red">*</span></label>
             <input v-model="userForm.username" type="text" class="w-full px-4 py-2 border border-apple-gray-100 rounded-apple-sm focus:outline-none focus:border-apple-blue" placeholder="输入用户名" :disabled="isEditing">
-            <p class="text-caption mt-1" v-if="!isEditing">初始密码：用户名首字母大写 + 123456（如 Admin123456）</p>
+          </div>
+          <!-- 生成的密码显示 -->
+          <div v-if="!isEditing && generatedPassword" class="p-4 bg-apple-bg rounded-apple-sm">
+            <label class="text-caption block mb-2">初始密码（自动生成）</label>
+            <div class="flex items-center gap-3">
+              <code class="flex-1 px-3 py-2 bg-white rounded border border-apple-gray-100 font-mono text-body">{{ generatedPassword }}</code>
+              <button 
+                @click="navigator.clipboard.writeText(generatedPassword); alert('密码已复制到剪贴板')" 
+                class="px-3 py-2 text-caption text-apple-blue hover:bg-apple-blue/10 rounded-apple-sm transition-colors whitespace-nowrap"
+              >
+                复制
+              </button>
+            </div>
+            <p class="text-caption text-apple-gray-400 mt-2">规则：用户名首字母大写 + 123456</p>
           </div>
           <div>
             <label class="text-caption block mb-2">部门</label>
