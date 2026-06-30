@@ -1,11 +1,14 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 
+// 角色类型：developer(开发者) > manager(管理员) > user(普通用户)
+export type UserRole = 'developer' | 'manager' | 'user'
+
 export interface User {
   id: number
   name: string
   username: string
-  role: 'admin' | 'user'
+  role: UserRole
   avatar?: string
   department?: string
 }
@@ -23,7 +26,17 @@ export const useAuthStore = defineStore('auth', () => {
   // 当前登录用户
   const currentUser = ref<User | null>(savedUser ? JSON.parse(savedUser) : null)
   const isLoggedIn = computed(() => !!currentUser.value)
-  const isAdmin = computed(() => currentUser.value?.role === 'admin')
+  
+  // 权限判断
+  const isDeveloper = computed(() => currentUser.value?.role === 'developer')
+  const isManager = computed(() => currentUser.value?.role === 'manager')
+  const isUser = computed(() => currentUser.value?.role === 'user')
+  
+  // 是否可以管理用户（仅开发者）
+  const canManageUsers = computed(() => isDeveloper.value)
+  
+  // 是否可以查看所有数据（开发者和管理员）
+  const canViewAllData = computed(() => isDeveloper.value || isManager.value)
   
   // 监听用户变化，保存到localStorage
   watch(currentUser, (newUser) => {
@@ -36,11 +49,12 @@ export const useAuthStore = defineStore('auth', () => {
 
   // 用户列表（模拟数据库）
   const users = ref<User[]>([
-    { id: 1, name: '管理员', username: 'admin', role: 'admin', department: '管理部' },
-    { id: 2, name: '张三', username: 'zhangsan', role: 'user', department: '项目部' },
-    { id: 3, name: '李四', username: 'lisi', role: 'user', department: '创意部' },
-    { id: 4, name: '王五', username: 'wangwu', role: 'user', department: '项目部' },
-    { id: 5, name: '赵六', username: 'zhaoliu', role: 'user', department: '财务部' },
+    { id: 1, name: '开发者', username: 'dev', role: 'developer', department: '技术部' },
+    { id: 2, name: '管理员', username: 'admin', role: 'manager', department: '管理部' },
+    { id: 3, name: '张三', username: 'zhangsan', role: 'user', department: '项目部' },
+    { id: 4, name: '李四', username: 'lisi', role: 'user', department: '创意部' },
+    { id: 5, name: '王五', username: 'wangwu', role: 'user', department: '项目部' },
+    { id: 6, name: '赵六', username: 'zhaoliu', role: 'user', department: '财务部' },
   ])
 
   // 生成符合规则的初始密码：首字母大写 + 123456
@@ -146,9 +160,9 @@ export const useAuthStore = defineStore('auth', () => {
     return false
   }
 
-  // 重置用户密码（仅管理员）
+  // 重置用户密码（仅开发者）
   const resetPassword = (userId: number): boolean => {
-    if (!isAdmin.value) return false
+    if (!isDeveloper.value) return false
     
     const user = users.value.find(u => u.id === userId)
     if (!user) return false
@@ -162,9 +176,9 @@ export const useAuthStore = defineStore('auth', () => {
     return false
   }
 
-  // 添加用户（仅管理员）
+  // 添加用户（仅开发者）
   const addUser = (user: Omit<User, 'id'>): boolean => {
-    if (!isAdmin.value) return false
+    if (!isDeveloper.value) return false
     
     // 检查用户名是否已存在
     const existingUser = users.value.find(u => u.username === user.username)
@@ -183,9 +197,9 @@ export const useAuthStore = defineStore('auth', () => {
     return true
   }
 
-  // 删除用户（仅管理员）
+  // 删除用户（仅开发者）
   const deleteUser = (userId: number): boolean => {
-    if (!isAdmin.value) return false
+    if (!isDeveloper.value) return false
     if (currentUser.value?.id === userId) return false // 不能删除自己
     
     const user = users.value.find(u => u.id === userId)
@@ -199,9 +213,9 @@ export const useAuthStore = defineStore('auth', () => {
     return false
   }
 
-  // 更新用户（仅管理员）
+  // 更新用户（仅开发者）
   const updateUser = (userId: number, updates: Partial<User>): boolean => {
-    if (!isAdmin.value) return false
+    if (!isDeveloper.value) return false
     
     const index = users.value.findIndex(u => u.id === userId)
     if (index !== -1) {
@@ -229,7 +243,11 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     currentUser,
     isLoggedIn,
-    isAdmin,
+    isDeveloper,
+    isManager,
+    isUser,
+    canManageUsers,
+    canViewAllData,
     users,
     login,
     logout,

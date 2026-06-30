@@ -36,6 +36,16 @@ const quickLogin = (user: string) => {
   password.value = user.charAt(0).toUpperCase() + user.slice(1) + '123456'
   handleLogin()
 }
+
+// 获取角色显示文本
+const getRoleText = (role: string) => {
+  switch (role) {
+    case 'developer': return '开发者'
+    case 'manager': return '管理员'
+    case 'user': return '用户'
+    default: return '用户'
+  }
+}
 </script>
 
 <template>
@@ -105,7 +115,7 @@ const quickLogin = (user: string) => {
               @click="quickLogin(user.username)"
               class="px-3 py-1.5 bg-apple-bg rounded-apple-sm text-sm hover:bg-apple-gray-100 transition-colors"
             >
-              {{ user.name }} ({{ user.role === 'admin' ? '管理员' : '用户' }})
+              {{ user.name }} ({{ getRoleText(user.role) }})
             </button>
           </div>
           <p class="text-caption mt-2 text-xs">初始密码：首字母大写 + 123456（如 Admin123456）</p>

@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { Users, Plus, Edit, Trash2, Shield, User, X, Check, Key } from '@lucide/vue'
+import type { UserRole } from '../stores/auth'
 
 const authStore = useAuthStore()
 
@@ -13,11 +14,16 @@ const editingUserId = ref<number | null>(null)
 const userForm = ref({
   name: '',
   username: '',
-  role: 'user' as 'admin' | 'user',
+  role: 'user' as UserRole,
   department: '项目部',
 })
 
 const departments = ['管理部', '项目部', '创意部', '财务部', '技术部']
+const roles: { value: UserRole; label: string }[] = [
+  { value: 'developer', label: '开发者' },
+  { value: 'manager', label: '管理员' },
+  { value: 'user', label: '普通用户' },
+]
 
 const openAddModal = () => {
   isEditing.value = false
@@ -63,14 +69,22 @@ const resetUserPassword = (user: any) => {
   }
 }
 
-const getRoleBadgeClass = (role: string) => {
-  return role === 'admin' 
-    ? 'bg-apple-red/10 text-apple-red' 
-    : 'bg-apple-blue/10 text-apple-blue'
+const getRoleBadgeClass = (role: UserRole) => {
+  switch (role) {
+    case 'developer': return 'bg-purple-100 text-purple-600'
+    case 'manager': return 'bg-apple-red/10 text-apple-red'
+    case 'user': return 'bg-apple-blue/10 text-apple-blue'
+    default: return 'bg-apple-gray-100 text-apple-gray-400'
+  }
 }
 
-const getRoleText = (role: string) => {
-  return role === 'admin' ? '管理员' : '普通用户'
+const getRoleText = (role: UserRole) => {
+  switch (role) {
+    case 'developer': return '开发者'
+    case 'manager': return '管理员'
+    case 'user': return '普通用户'
+    default: return '未知'
+  }
 }
 </script>
 
@@ -107,12 +121,23 @@ const getRoleText = (role: string) => {
       </div>
       <div class="card">
         <div class="flex items-center gap-4">
+          <div class="p-3 bg-purple-100 rounded-apple-sm">
+            <Shield class="w-6 h-6 text-purple-600" />
+          </div>
+          <div>
+            <p class="text-caption">开发者</p>
+            <p class="text-display text-2xl">{{ authStore.users.filter(u => u.role === 'developer').length }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="flex items-center gap-4">
           <div class="p-3 bg-apple-red/10 rounded-apple-sm">
             <Shield class="w-6 h-6 text-apple-red" />
           </div>
           <div>
             <p class="text-caption">管理员</p>
-            <p class="text-display text-2xl">{{ authStore.users.filter(u => u.role === 'admin').length }}</p>
+            <p class="text-display text-2xl">{{ authStore.users.filter(u => u.role === 'manager').length }}</p>
           </div>
         </div>
       </div>
@@ -159,7 +184,7 @@ const getRoleText = (role: string) => {
               </span>
             </td>
             <td class="p-4">
-              <div class="flex items-center gap-2" v-if="authStore.isAdmin">
+              <div class="flex items-center gap-2" v-if="authStore.isDeveloper">
                 <button 
                   @click="openEditModal(user)" 
                   class="p-1.5 text-apple-gray-400 hover:text-apple-blue rounded transition-colors"
@@ -195,8 +220,9 @@ const getRoleText = (role: string) => {
     <div class="card bg-apple-blue-light/30">
       <h4 class="text-title-2 mb-4">权限说明</h4>
       <div class="space-y-2 text-body">
-        <p><span class="font-medium text-apple-red">管理员</span>：可以管理所有项目、用户、查看所有数据</p>
-        <p><span class="font-medium text-apple-blue">普通用户</span>：可以查看和编辑自己参与的项目</p>
+        <p><span class="font-medium text-purple-600">开发者</span>：系统最高权限，可管理用户、查看所有数据</p>
+        <p><span class="font-medium text-apple-red">管理员</span>：可查看所有项目、创意部内容，但不可管理用户</p>
+        <p><span class="font-medium text-apple-blue">普通用户</span>：按部门查看和编辑自己参与的项目</p>
       </div>
     </div>
 
@@ -221,17 +247,10 @@ const getRoleText = (role: string) => {
             </select>
           </div>
           <div>
-            <label class="text-caption block mb-2">角色</label>
-            <div class="flex items-center gap-4">
-              <label class="flex items-center gap-2 cursor-pointer">
-                <input v-model="userForm.role" type="radio" value="user" class="w-4 h-4 text-apple-blue">
-                <span class="text-body">普通用户</span>
-              </label>
-              <label class="flex items-center gap-2 cursor-pointer">
-                <input v-model="userForm.role" type="radio" value="admin" class="w-4 h-4 text-apple-red">
-                <span class="text-body">管理员</span>
-              </label>
-            </div>
+            <label class="text-caption block mb-2">角色 <span class="text-apple-red">*</span></label>
+            <select v-model="userForm.role" class="w-full px-4 py-2 border border-apple-gray-100 rounded-apple-sm focus:outline-none focus:border-apple-blue">
+              <option v-for="role in roles" :key="role.value" :value="role.value">{{ role.label }}</option>
+            </select>
           </div>
         </div>
         <div class="flex items-center justify-end gap-3 mt-8">

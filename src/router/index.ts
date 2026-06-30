@@ -59,7 +59,7 @@ const router = createRouter({
       path: '/users',
       name: 'users',
       component: UsersView,
-      meta: { title: '用户管理', requiresAuth: true, requiresAdmin: true },
+      meta: { title: '用户管理', requiresAuth: true, requiresDeveloper: true },
     },
     {
       path: '/profile',
@@ -80,8 +80,8 @@ router.beforeEach((to, from, next) => {
     return
   }
   
-  // 需要管理员权限的页面
-  if (to.meta.requiresAdmin && !authStore.isAdmin) {
+  // 需要开发者权限的页面（用户管理）
+  if (to.meta.requiresDeveloper && !authStore.isDeveloper) {
     next('/')
     return
   }

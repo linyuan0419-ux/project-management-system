@@ -94,10 +94,10 @@ const createProject = () => {
             <span class="text-body font-medium">{{ item.name }}</span>
           </router-link>
 
-          <!-- 管理员菜单 -->
-          <template v-if="authStore.isAdmin">
+          <!-- 开发者菜单（用户管理） -->
+          <template v-if="authStore.isDeveloper">
             <div class="pt-4 mt-4 border-t border-apple-gray-100">
-              <p class="px-4 text-xs text-apple-gray-400 mb-2">管理</p>
+              <p class="px-4 text-xs text-apple-gray-400 mb-2">系统管理</p>
               <router-link
                 v-for="item in adminNavItems"
                 :key="item.path"
@@ -128,7 +128,10 @@ const createProject = () => {
           <div class="flex-1 min-w-0">
             <p class="text-body font-medium truncate">{{ authStore.currentUser?.name }}</p>
             <p class="text-caption truncate">
-              {{ authStore.currentUser?.department }} · {{ authStore.isAdmin ? '管理员' : '用户' }}
+              {{ authStore.currentUser?.department }} · {{ 
+                authStore.isDeveloper ? '开发者' : 
+                authStore.isManager ? '管理员' : '用户' 
+              }}
             </p>
           </div>
         </router-link>
