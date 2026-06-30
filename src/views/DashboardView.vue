@@ -1,9 +1,86 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { CheckSquare, AlertCircle, Briefcase, Clock, Sparkles, Sun, Moon, Coffee } from '@lucide/vue'
+import { CheckSquare, AlertCircle, Briefcase, Clock, Sparkles, Sun, Moon, Coffee, Heart, Droplets, Fish, Cat, Smile } from '@lucide/vue'
 
 const router = useRouter()
+
+// ========== 电子宠物小猫系统 ==========
+// 小猫状态
+const catState = ref({
+  hunger: 80,      // 饥饿值 0-100
+  thirst: 80,      // 口渴值 0-100
+  mood: 80,        // 心情值 0-100
+  energy: 80,      // 精力值 0-100
+})
+
+// 小猫表情和状态
+const catStatus = computed(() => {
+  const { hunger, thirst, mood, energy } = catState.value
+  const avg = (hunger + thirst + mood + energy) / 4
+  
+  if (avg >= 80) return { emoji: '😸', text: '开心', color: '#34C759', desc: '喵~ 今天工作很顺利呢！' }
+  if (avg >= 60) return { emoji: '😺', text: '满足', color: '#007AFF', desc: '喵喵~ 状态不错哦' }
+  if (avg >= 40) return { emoji: '😐', text: '一般', color: '#FF9500', desc: '喵... 有点饿了' }
+  if (avg >= 20) return { emoji: '😿', text: '疲惫', color: '#FF3B30', desc: '喵喵... 需要休息' }
+  return { emoji: '😾', text: '不开心', color: '#8E8E93', desc: '喵呜... 快给我吃的！' }
+})
+
+// 食物库存
+const inventory = ref({
+  food: 3,     // 猫粮
+  water: 3,    // 水
+  snack: 1,    // 零食
+})
+
+// 喂食
+const feedCat = (type: 'food' | 'water' | 'snack') => {
+  if (inventory.value[type] <= 0) return
+  
+  inventory.value[type]--
+  
+  if (type === 'food') {
+    catState.value.hunger = Math.min(100, catState.value.hunger + 30)
+    catState.value.energy = Math.min(100, catState.value.energy + 10)
+  } else if (type === 'water') {
+    catState.value.thirst = Math.min(100, catState.value.thirst + 30)
+    catState.value.energy = Math.min(100, catState.value.energy + 5)
+  } else if (type === 'snack') {
+    catState.value.hunger = Math.min(100, catState.value.hunger + 20)
+    catState.value.mood = Math.min(100, catState.value.mood + 30)
+  }
+}
+
+// 互动
+const playWithCat = () => {
+  catState.value.mood = Math.min(100, catState.value.mood + 15)
+  catState.value.energy = Math.max(0, catState.value.energy - 5)
+}
+
+// 完成任务获得食物
+const earnReward = (taskCompleted: boolean) => {
+  if (taskCompleted) {
+    const rand = Math.random()
+    if (rand < 0.5) inventory.value.food++
+    else if (rand < 0.8) inventory.value.water++
+    else inventory.value.snack++
+  }
+}
+
+// 自然衰减（每30秒）
+let decayInterval: number | null = null
+onMounted(() => {
+  decayInterval = window.setInterval(() => {
+    catState.value.hunger = Math.max(0, catState.value.hunger - 2)
+    catState.value.thirst = Math.max(0, catState.value.thirst - 3)
+    catState.value.mood = Math.max(0, catState.value.mood - 1)
+    catState.value.energy = Math.max(0, catState.value.energy - 1)
+  }, 30000)
+})
+
+onUnmounted(() => {
+  if (decayInterval) clearInterval(decayInterval)
+})
 
 // ========== 治愈系功能 ==========
 // 1. 人性化问候语
@@ -53,13 +130,30 @@ const todayStats = computed(() => {
 
 // 4. 任务完成动效
 const completingTask = ref<number | null>(null)
+const showReward = ref(false)
+const rewardType = ref<'food' | 'water' | 'snack'>('food')
+
 const completeTask = (taskId: number) => {
   completingTask.value = taskId
   setTimeout(() => {
-    const task = todayTasks.find(t => t.id === taskId)
+    const task = todayTasks.value.find(t => t.id === taskId)
     if (task && !task.completed) {
       task.completed = true
       todayCompleted.value++
+      // 获得奖励
+      const rand = Math.random()
+      if (rand < 0.5) {
+        rewardType.value = 'food'
+        inventory.value.food++
+      } else if (rand < 0.8) {
+        rewardType.value = 'water'
+        inventory.value.water++
+      } else {
+        rewardType.value = 'snack'
+        inventory.value.snack++
+      }
+      showReward.value = true
+      setTimeout(() => showReward.value = false, 2000)
     }
     completingTask.value = null
   }, 300)
@@ -188,13 +282,22 @@ const recentActivities = [
       </div>
     </section>
 
-    <!-- 今日行动清单 + 今日成就 + 最近动态 -->
-    <div class="grid grid-cols-3 gap-6">
+    <!-- 今日行动清单 + 今日成就 + 电子宠物 + 最近动态 -->
+    <div class="grid grid-cols-4 gap-6">
       <!-- 今日待办 -->
       <section class="card col-span-2">
         <div class="flex items-center justify-between mb-6">
           <h3 class="text-title-1">今日行动</h3>
           <span class="text-caption text-apple-gray-400">{{ todayStats.completed }}/{{ todayStats.total }} 已完成</span>
+        </div>
+        <!-- 获得奖励提示 -->
+        <div v-if="showReward" class="mb-4 p-3 bg-green-50 rounded-apple-sm flex items-center gap-3 animate-reward">
+          <div class="w-8 h-8 rounded-full bg-apple-green flex items-center justify-center">
+            <component :is="rewardType === 'food' ? Fish : rewardType === 'water' ? Droplets : Heart" class="w-4 h-4 text-white" />
+          </div>
+          <p class="text-body text-apple-green">
+            任务完成！获得 {{ rewardType === 'food' ? '猫粮' : rewardType === 'water' ? '水' : '零食' }} ×1 🎉
+          </p>
         </div>
         <div class="space-y-3">
           <div v-for="task in todayTasks" :key="task.id" 
@@ -279,6 +382,101 @@ const recentActivities = [
           </div>
         </div>
       </section>
+
+      <!-- 电子宠物小猫 -->
+      <section class="card bg-gradient-to-br from-orange-50 to-white">
+        <div class="flex items-center gap-2 mb-4">
+          <Cat class="w-5 h-5 text-apple-orange" />
+          <h3 class="text-title-1">工作伙伴</h3>
+        </div>
+        
+        <!-- 小猫状态 -->
+        <div class="text-center mb-4">
+          <div class="text-6xl mb-2">{{ catStatus.emoji }}</div>
+          <p class="text-title-2" :style="{ color: catStatus.color }">{{ catStatus.text }}</p>
+          <p class="text-caption text-apple-gray-400 mt-1">{{ catStatus.desc }}</p>
+        </div>
+
+        <!-- 状态条 -->
+        <div class="space-y-3 mb-4">
+          <div>
+            <div class="flex items-center justify-between text-caption mb-1">
+              <span class="flex items-center gap-1"><Fish class="w-3 h-3" /> 饱食度</span>
+              <span>{{ catState.hunger }}%</span>
+            </div>
+            <div class="h-2 bg-apple-gray-100 rounded-full overflow-hidden">
+              <div class="h-full rounded-full transition-all duration-500" 
+                   :style="{ width: catState.hunger + '%', backgroundColor: catState.hunger > 60 ? '#34C759' : catState.hunger > 30 ? '#FF9500' : '#FF3B30' }"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center justify-between text-caption mb-1">
+              <span class="flex items-center gap-1"><Droplets class="w-3 h-3" /> 水分</span>
+              <span>{{ catState.thirst }}%</span>
+            </div>
+            <div class="h-2 bg-apple-gray-100 rounded-full overflow-hidden">
+              <div class="h-full rounded-full transition-all duration-500" 
+                   :style="{ width: catState.thirst + '%', backgroundColor: catState.thirst > 60 ? '#007AFF' : catState.thirst > 30 ? '#FF9500' : '#FF3B30' }"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center justify-between text-caption mb-1">
+              <span class="flex items-center gap-1"><Heart class="w-3 h-3" /> 心情</span>
+              <span>{{ catState.mood }}%</span>
+            </div>
+            <div class="h-2 bg-apple-gray-100 rounded-full overflow-hidden">
+              <div class="h-full rounded-full transition-all duration-500" 
+                   :style="{ width: catState.mood + '%', backgroundColor: catState.mood > 60 ? '#FF2D55' : catState.mood > 30 ? '#FF9500' : '#8E8E93' }"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 喂食按钮 -->
+        <div class="grid grid-cols-3 gap-2 mb-3">
+          <button 
+            @click="feedCat('food')" 
+            :disabled="inventory.food <= 0 || catState.hunger >= 100"
+            class="p-2 rounded-apple-sm bg-white border border-apple-gray-100 hover:bg-orange-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Fish class="w-4 h-4 mx-auto mb-1" :class="inventory.food > 0 ? 'text-apple-orange' : 'text-apple-gray-300'" />
+            <p class="text-caption">猫粮</p>
+            <p class="text-caption font-medium">×{{ inventory.food }}</p>
+          </button>
+          <button 
+            @click="feedCat('water')" 
+            :disabled="inventory.water <= 0 || catState.thirst >= 100"
+            class="p-2 rounded-apple-sm bg-white border border-apple-gray-100 hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Droplets class="w-4 h-4 mx-auto mb-1" :class="inventory.water > 0 ? 'text-apple-blue' : 'text-apple-gray-300'" />
+            <p class="text-caption">水</p>
+            <p class="text-caption font-medium">×{{ inventory.water }}</p>
+          </button>
+          <button 
+            @click="feedCat('snack')" 
+            :disabled="inventory.snack <= 0 || catState.mood >= 100"
+            class="p-2 rounded-apple-sm bg-white border border-apple-gray-100 hover:bg-pink-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Heart class="w-4 h-4 mx-auto mb-1" :class="inventory.snack > 0 ? 'text-apple-red' : 'text-apple-gray-300'" />
+            <p class="text-caption">零食</p>
+            <p class="text-caption font-medium">×{{ inventory.snack }}</p>
+          </button>
+        </div>
+
+        <!-- 互动按钮 -->
+        <button 
+          @click="playWithCat"
+          :disabled="catState.energy < 10"
+          class="w-full py-2 rounded-apple-sm bg-apple-bg hover:bg-apple-gray-100 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+        >
+          <Smile class="w-4 h-4" />
+          <span class="text-body">摸摸头</span>
+        </button>
+
+        <!-- 提示 -->
+        <p class="text-caption text-apple-gray-400 text-center mt-3">
+          完成任务可获得食物奖励
+        </p>
+      </section>
     </div>
 
     <!-- 最近动态 -->
@@ -337,5 +535,36 @@ button:active:not(:disabled) {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
+}
+
+/* 奖励动画 */
+@keyframes reward-pop {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-reward {
+  animation: reward-pop 0.3s ease-out;
+}
+
+/* 小猫表情动画 */
+@keyframes cat-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.text-6xl {
+  animation: cat-bounce 2s ease-in-out infinite;
+}
+
+/* 状态条闪烁（低状态时） */
+@keyframes pulse-warning {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.pulse-warning {
+  animation: pulse-warning 1s ease-in-out infinite;
 }
 </style>
